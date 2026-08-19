@@ -1,0 +1,2616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>菲律宾少林文化中心 - 功夫课表 2026年8月-12月</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+  --bg: #f0f4f8;
+  --card: #ffffff;
+  --text: #1e293b;
+  --text2: #64748b;
+  --border: #e2e8f0;
+  --accent: #b91c1c;
+  --accent-light: #fef2f2;
+  --gold: #d4a017;
+  --gold-light: #fef9e7;
+  --blue: #2563eb;
+  --blue-light: #dbeafe;
+  --green: #16a34a;
+  --green-light: #dcfce7;
+  --purple: #7c3aed;
+  --purple-light: #ede9fe;
+  --orange: #ea580c;
+  --orange-light: #fff7ed;
+  --c1: #dc2626;
+  --c1-bg: #fef2f2;
+  --c2: #2563eb;
+  --c2-bg: #dbeafe;
+  --c3: #16a34a;
+  --c3-bg: #dcfce7;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:"Microsoft YaHei","Segoe UI",sans-serif; background:var(--bg); color:var(--text); }
+
+/* ===== Header ===== */
+.header { background:linear-gradient(135deg,#7f1d1d,#b91c1c); color:#fff; padding:24px 32px; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+.header h1 { font-size:24px; margin-bottom:4px; }
+.header p { font-size:13px; opacity:.85; }
+.tabs { display:flex; gap:4px; margin-top:16px; }
+.tab { padding:8px 24px; background:rgba(255,255,255,.15); border:none; color:#fff; font-size:14px; cursor:pointer; border-radius:8px 8px 0 0; transition:background .2s; font-family:inherit; }
+.tab:hover { background:rgba(255,255,255,.25); }
+.tab.active { background:var(--bg); color:var(--text); font-weight:600; }
+.data-sync-bar { display:flex; gap:8px; align-items:center; margin-top:8px; }
+.data-sync-bar .btn { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; }
+.data-sync-bar .btn:hover { background:rgba(255,255,255,.25); }
+
+/* ===== Layout ===== */
+.container { max-width:1400px; margin:0 auto; padding:24px; }
+.section { display:none; }
+.section.active { display:block; }
+
+/* ===== Cards ===== */
+.card { background:var(--card); border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.06); padding:20px; margin-bottom:20px; }
+.card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.card-header h3 { font-size:16px; }
+.card-header .sub { font-size:13px; color:var(--text2); }
+
+/* ===== Stats ===== */
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:20px; }
+.stat-box { background:var(--card); border-radius:10px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.06); text-align:center; }
+.stat-box .label { font-size:12px; color:var(--text2); margin-bottom:4px; }
+.stat-box .value { font-size:24px; font-weight:700; }
+.stat-box .sub { font-size:11px; color:var(--text2); margin-top:2px; }
+
+/* ===== Weekly Schedule ===== */
+.weekly-table { width:100%; border-collapse:collapse; font-size:14px; }
+.weekly-table th { background:#7f1d1d; color:#fff; padding:12px; text-align:center; font-weight:600; }
+.weekly-table th:first-child { border-radius:8px 0 0 0; }
+.weekly-table th:last-child { border-radius:0 8px 0 0; }
+.weekly-table td { padding:16px 12px; border:1px solid var(--border); text-align:center; vertical-align:top; }
+.weekly-table .time-col { background:#f8fafc; font-weight:600; color:var(--text2); white-space:nowrap; width:140px; }
+.class-block { border-radius:8px; padding:10px; margin:4px 0; font-size:13px; }
+.class-block .cls-name { font-weight:700; font-size:14px; margin-bottom:4px; }
+.class-block .cls-teacher { font-size:12px; opacity:.8; }
+.cb-1 { background:var(--c1-bg); border-left:3px solid var(--c1); color:var(--c1); }
+.cb-2 { background:var(--c2-bg); border-left:3px solid var(--c2); color:var(--c2); }
+.cb-3 { background:var(--c3-bg); border-left:3px solid var(--c3); color:var(--c3); }
+.cb-12 { background:linear-gradient(135deg,var(--c1-bg),var(--c2-bg)); border-left:3px solid var(--c1); }
+.cb-12 .cls-name { color:var(--c1); }
+.cb-12 .cls-name .alt { color:var(--c2); }
+.cb-all { background:linear-gradient(135deg,var(--c1-bg) 0%,var(--c2-bg) 50%,var(--c3-bg) 100%); border-left:3px solid var(--accent); }
+.cb-all .cls-name { color:var(--text); font-size:13px; }
+.cb-all .cls-name .alt { color:var(--c2); }
+.cb-all .cls-name .alt3 { color:var(--c3); }
+.empty-slot { color:#cbd5e1; font-size:13px; }
+
+/* ===== Calendar ===== */
+.cal-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:20px; }
+.cal-month { background:var(--card); border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.06); overflow:hidden; }
+.cal-month-header { background:#7f1d1d; color:#fff; padding:10px 16px; font-size:15px; font-weight:600; }
+.cal-body { padding:8px; }
+.cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:4px; }
+.cal-weekdays div { text-align:center; font-size:11px; color:var(--text2); font-weight:600; padding:4px 0; }
+.cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.cal-day { aspect-ratio:1; border-radius:6px; padding:4px; font-size:12px; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; min-height:48px; }
+.cal-day.empty { background:transparent; }
+.cal-day.normal { background:#f8fafc; }
+.cal-day.has-class { background:var(--accent-light); border:1px solid var(--accent); cursor:default; }
+.cal-day .day-num { font-weight:600; font-size:13px; }
+.cal-day .day-classes { display:flex; flex-wrap:wrap; gap:2px; margin-top:2px; justify-content:center; }
+.cal-dot { width:8px; height:8px; border-radius:50%; }
+.dot-1 { background:var(--c1); }
+.dot-2 { background:var(--c2); }
+.dot-3 { background:var(--c3); }
+.cal-day .class-label { font-size:9px; line-height:1.2; text-align:center; }
+
+/* ===== Attendance Table ===== */
+.tools-bar { display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+.tools-bar select, .tools-bar input { padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; font-family:inherit; }
+.btn { padding:8px 18px; border:none; border-radius:8px; font-size:14px; cursor:pointer; font-family:inherit; transition:all .2s; display:inline-flex; align-items:center; gap:6px; }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { background:#991b1b; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+.btn-outline:hover { background:#f8fafc; }
+.btn-danger { background:#dc2626; color:#fff; }
+.btn-danger:hover { background:#b91c1c; }
+.btn-danger.confirming { background:#7f1d1d; }
+.btn-sm { padding:4px 12px; font-size:13px; }
+.btn-gold { background:var(--gold); color:#fff; }
+.btn-gold:hover { background:#b8860b; }
+
+.table-wrap { overflow-x:auto; }
+table.data-table { width:100%; border-collapse:collapse; font-size:13px; }
+table.data-table th { background:#7f1d1d; color:#fff; padding:10px 8px; text-align:center; font-weight:600; white-space:nowrap; }
+table.data-table td { padding:10px 8px; border-bottom:1px solid var(--border); text-align:center; }
+table.data-table tr:hover td { background:#fef2f2; }
+table.data-table .day-fri { color:var(--accent); font-weight:600; }
+table.data-table .day-sat { color:var(--blue); font-weight:600; }
+table.data-table .day-sun { color:var(--purple); font-weight:600; }
+.badge-cls { display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+.bc-1 { background:var(--c1-bg); color:var(--c1); }
+.bc-2 { background:var(--c2-bg); color:var(--c2); }
+.bc-3 { background:var(--c3-bg); color:var(--c3); }
+.badge-disciple { display:inline-block; margin-left:6px; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; background:var(--gold); color:#fff; vertical-align:middle; }
+.disciple-note { color:var(--gold); font-weight:600; font-size:13px; }
+.count-cell { font-weight:700; font-size:15px; }
+.count-cell .total { color:var(--text2); font-size:13px; font-weight:400; }
+
+/* ===== Summary Table ===== */
+.summary-table th { background:#1e293b !important; }
+.summary-table td { text-align:center; }
+.summary-table .row-total { font-weight:700; background:#f8fafc; }
+.summary-table .grand-total { font-weight:700; background:#fef9e7; color:var(--accent); font-size:15px; }
+
+/* ===== Enrollment Table ===== */
+.enrollment-table th { background:#1e293b !important; }
+.enrollment-table td { text-align:center; vertical-align:middle; }
+.enrollment-table td.name-col { text-align:left; font-weight:600; }
+.enrollment-table td.class-col { text-align:left; }
+.enrollment-table .num { font-family:"Segoe UI",sans-serif; }
+.enrollment-table .negative { color:var(--accent); font-weight:700; }
+.enrollment-table .positive { color:var(--green); font-weight:700; }
+.enrollment-table .near-expire { color:var(--orange); font-weight:700; }
+.enrollment-table .expired { color:var(--accent); font-weight:700; }
+.enrollment-table .empty { color:#cbd5e1; font-style:italic; }
+.enrollment-table input[type="number"], .enrollment-table input[type="date"] { width:90px; padding:4px 6px; border:1px solid var(--border); border-radius:4px; font-size:12px; font-family:inherit; }
+.enrollment-table input[type="date"] { width:120px; }
+.enrollment-table .edit-actions { display:flex; gap:4px; justify-content:center; }
+.enrollment-table .edit-actions button { padding:3px 8px; font-size:12px; }
+
+/* ===== Modal ===== */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:1000; }
+.modal { background:#fff; border-radius:12px; padding:24px; width:92%; max-width:600px; max-height:85vh; overflow-y:auto; }
+.modal h3 { font-size:18px; margin-bottom:16px; }
+.modal-actions { display:flex; justify-content:flex-end; gap:12px; margin-top:20px; }
+
+/* ===== Student Check List ===== */
+.check-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; max-height:400px; overflow-y:auto; padding:8px; }
+.check-item { display:flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--border); border-radius:8px; cursor:pointer; transition:all .15s; }
+.check-item:hover { border-color:var(--accent); }
+.check-item.checked { background:var(--accent-light); border-color:var(--accent); }
+.check-item input { width:18px; height:18px; accent-color:var(--accent); }
+.check-item label { cursor:pointer; font-size:14px; flex:1; }
+.check-item .phone { font-size:11px; color:var(--text2); }
+
+/* ===== Roster Management ===== */
+.roster-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+.roster-card { border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.roster-card-header { padding:10px 14px; font-weight:600; font-size:14px; color:#fff; }
+.roster-card-body { padding:12px; }
+.roster-card-body .student-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.roster-card-body .student-row:last-child { border-bottom:none; }
+.roster-card-body .add-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.roster-card-body .add-row input, .roster-card-body .add-row select { flex:1; min-width:70px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:13px; font-family:inherit; background:#fff; }
+.roster-card-body .add-row select { appearance:auto; }
+.student-meta { display:inline-flex; gap:6px; align-items:center; margin-left:6px; }
+.student-meta .tag { font-size:11px; padding:1px 6px; border-radius:10px; background:var(--bg); color:var(--text2); }
+.student-meta .tag.gender-m { background:#dbeafe; color:#2563eb; }
+.student-meta .tag.gender-f { background:#fce7f3; color:#db2777; }
+.student-meta .tag.age { background:#f0fdf4; color:#16a34a; font-weight:600; }
+.del-btn { background:none; border:none; color:var(--accent); cursor:pointer; font-size:16px; padding:2px 6px; border-radius:4px; }
+.del-btn:hover { background:var(--accent-light); }
+.del-btn.confirming { background:var(--accent); color:#fff; font-size:12px; white-space:nowrap; }
+.edit-btn { background:none; border:none; color:var(--blue); cursor:pointer; font-size:14px; padding:2px 6px; border-radius:4px; margin-right:2px; }
+.edit-btn:hover { background:#dbeafe; }
+.student-row .actions { display:flex; align-items:center; }
+.student-row .edit-form { display:none; flex-wrap:wrap; gap:5px; align-items:center; width:100%; }
+.student-row .edit-form input, .student-row .edit-form select { flex:1; min-width:60px; padding:5px 7px; border:1px solid var(--border); border-radius:5px; font-size:12px; font-family:inherit; background:#fff; }
+.student-row .edit-form input[name="name"] { flex:1.5; min-width:70px; }
+.student-row .edit-form select { min-width:55px; }
+.student-row .edit-form .btn-sm { padding:5px 10px; font-size:12px; }
+.student-row .view { display:flex; align-items:center; flex-wrap:wrap; gap:4px; }
+.student-row.editing { background:#f8fafc; padding:8px; border-radius:6px; border:1px dashed var(--blue); }
+.student-row.editing .view { display:none; }
+.student-row.editing .actions { display:none !important; }
+.student-row.editing .edit-form { display:flex; }
+
+/* ===== Toast ===== */
+.toast { position:fixed; bottom:24px; right:24px; background:#1e293b; color:#fff; padding:12px 24px; border-radius:8px; font-size:14px; z-index:2000; animation:slideUp .3s; }
+@keyframes slideUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+
+/* ===== Print ===== */
+@media print {
+  .header { position:static; }
+  .tabs, .tools-bar, .btn { display:none !important; }
+  .section { display:block !important; }
+  .card { box-shadow:none; border:1px solid #ccc; page-break-inside:avoid; }
+  body { background:#fff; }
+}
+
+/* ===== Legend ===== */
+.legend { display:flex; gap:16px; flex-wrap:wrap; align-items:center; font-size:13px; color:var(--text2); }
+.legend-item { display:flex; align-items:center; gap:6px; }
+.legend-dot { width:12px; height:12px; border-radius:50%; }
+
+@media(max-width:768px) {
+  .container { padding:12px; }
+  .weekly-table { font-size:12px; }
+  .weekly-table .time-col { width:80px; }
+  .cal-grid { grid-template-columns:1fr; }
+}
+/* ===== Login Overlay ===== */
+#login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#1e293b 0%,#334155 100%);z-index:10000;display:flex;align-items:center;justify-content:center}
+.login-card{background:#fff;padding:40px;border-radius:16px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-card h2{margin:0 0 8px;text-align:center;font-size:22px}
+.login-card .sub{text-align:center;color:#64748b;margin-bottom:24px;font-size:14px}
+.login-card label{display:block;margin-bottom:16px;font-size:14px;color:#334155}
+.login-card input{width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;margin-top:4px;box-sizing:border-box;font-family:inherit}
+.login-card input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.login-card .err{color:#ef4444;font-size:13px;margin-top:8px;display:none;text-align:center}
+.login-card .btn-login{width:100%;padding:12px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-family:inherit;margin-top:8px}
+.login-card .btn-login:hover{background:#2563eb}
+.login-card .btn-login:disabled{opacity:.6;cursor:wait}
+.auth-bar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin-top:8px;padding:6px 0;border-top:1px solid var(--border)}
+.auth-bar .auth-email{font-weight:600;color:var(--text)}
+.auth-bar .btn-logout{padding:4px 10px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;color:var(--text2);font-family:inherit}
+.auth-bar .btn-logout:hover{background:#fef2f2;color:#ef4444;border-color:#fca5a5}
+</style>
+</head>
+<body>
+
+<div id="app-loader" style="position:fixed;inset:0;background:#f8fafc;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:12px">
+  <div style="font-size:28px">🥋</div>
+  <div style="color:#64748b;font-size:14px">正在加载数据...</div>
+</div>
+
+<div id="login-overlay" style="display:none">
+  <div class="login-card">
+    <h2>🥋 管理员登录</h2>
+    <div class="sub">菲律宾少林文化中心 - 管理系统</div>
+    <label>邮箱<input type="email" id="login-email" placeholder="admin@example.com"></label>
+    <label>密码<input type="password" id="login-password" placeholder="输入密码"></label>
+    <div id="login-error" class="err"></div>
+    <button class="btn-login" id="login-btn" onclick="handleLogin()">登录</button>
+  </div>
+</div>
+
+<!-- ===== Header ===== -->
+<div class="header">
+  <h1>🥋 菲律宾少林文化中心 - 功夫课表</h1>
+  <p>2026年8月 - 12月 | 每周二至周日 | 延杉师父 · 恒瑞师父 · 恒福师父</p>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('schedule')">📅 功夫课表</button>
+    <button class="tab" onclick="switchTab('attendance')">✅ 出勤统计</button>
+    <button class="tab" onclick="switchTab('enrollment')">📊 报课统计</button>
+    <button class="tab" onclick="switchTab('roster')">👥 学员管理</button>
+  </div>
+  <div class="data-sync-bar">
+    <span style="font-size:12px;color:var(--text2)">💾 数据同步：</span>
+    <button class="btn btn-outline btn-sm" onclick="exportAllData()">⬆️ 导出数据</button>
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFileInput').click()">⬇️ 导入数据</button>
+    <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importAllData(event)">
+  </div>
+  <div class="auth-bar" id="auth-bar" style="display:none">
+    <span>👤 已登录：<span class="auth-email" id="auth-email"></span></span>
+    <button class="btn-logout" onclick="handleLogout()">退出登录</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ==================== Tab 1: Schedule ==================== -->
+<div class="section active" id="sec-schedule">
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-box"><div class="label">课程周期</div><div class="value" style="color:var(--accent)">5个月</div><div class="sub">2026.08 - 2026.12</div></div>
+    <div class="stat-box"><div class="label">总课程周数</div><div class="value" style="color:var(--blue)" id="statWeeks">-</div><div class="sub">每周二至周日</div></div>
+    <div class="stat-box"><div class="label">总大课数</div><div class="value" style="color:var(--green)" id="statTotal">-</div><div class="sub" id="statWeekly">-</div></div>
+    <div class="stat-box"><div class="label">班级数</div><div class="value" style="color:var(--purple)">3个</div><div class="sub">一班 · 二班 · 三四班</div></div>
+    <div class="stat-box"><div class="label">休息日</div><div class="value" style="color:var(--orange)">周一</div><div class="sub">每周休息一天</div></div>
+  </div>
+
+  <!-- Weekly Schedule -->
+  <div class="card">
+    <div class="card-header">
+      <div><h3>📋 每周课程安排</h3><div class="sub">周二至周日 · 每周循环</div></div>
+      <button class="btn btn-outline btn-sm" onclick="window.print()">🖨 打印课表</button>
+    </div>
+    <div class="table-wrap">
+      <table class="weekly-table">
+        <thead>
+          <tr>
+            <th>时间段</th>
+            <th>周二</th>
+            <th>周三</th>
+            <th>周四</th>
+            <th>周五</th>
+            <th>周六</th>
+            <th>周日</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="time-col">上午<br>9:30 - 11:30</td>
+            <td><div class="class-block cb-all"><div class="cls-name">少林一班 <span class="alt">少林二班</span> <span class="alt3">少林三四班</span></div><div class="cls-teacher">🔄 师父轮课</div></div></td>
+            <td><div class="class-block cb-all"><div class="cls-name">少林一班 <span class="alt">少林二班</span> <span class="alt3">少林三四班</span></div><div class="cls-teacher">🔄 师父轮课</div></div></td>
+            <td><div class="class-block cb-all"><div class="cls-name">少林一班 <span class="alt">少林二班</span> <span class="alt3">少林三四班</span></div><div class="cls-teacher">🔄 师父轮课</div></div></td>
+            <td><div class="class-block cb-all"><div class="cls-name">少林一班 <span class="alt">少林二班</span> <span class="alt3">少林三四班</span></div><div class="cls-teacher">🔄 师父轮课</div></div></td>
+            <td><div class="class-block cb-2"><div class="cls-name">少林二班</div><div class="cls-teacher">🧑‍🏫 延杉师父</div></div></td>
+            <td><div class="class-block cb-2"><div class="cls-name">少林二班</div><div class="cls-teacher">🧑‍🏫 延杉师父</div></div></td>
+          </tr>
+          <tr>
+            <td class="time-col">下午<br>15:00 - 17:00</td>
+            <td><div class="class-block cb-all"><div class="cls-name">少林一班 <span class="alt">少林二班</span> <span class="alt3">少林三四班</span></div><div class="cls-teacher">🔄 师父轮课</div></div></td>
+            <td><div class="class-block cb-all"><div class="cls-name">少林一班 <span class="alt">少林二班</span> <span class="alt3">少林三四班</span></div><div class="cls-teacher">🔄 师父轮课</div></div></td>
+            <td><div class="class-block cb-all"><div class="cls-name">少林一班 <span class="alt">少林二班</span> <span class="alt3">少林三四班</span></div><div class="cls-teacher">🔄 师父轮课</div></div></td>
+            <td><div class="class-block cb-all"><div class="cls-name">少林一班 <span class="alt">少林二班</span> <span class="alt3">少林三四班</span></div><div class="cls-teacher">🔄 师父轮课</div></div></td>
+            <td><div class="class-block cb-3"><div class="cls-name">少林三四班</div><div class="cls-teacher">🧑‍🏫 恒福师父、恒瑞师父</div></div></td>
+            <td><div class="class-block cb-3"><div class="cls-name">少林三四班</div><div class="cls-teacher">🧑‍🏫 恒福师父、恒瑞师父</div></div></td>
+          </tr>
+          <tr>
+            <td class="time-col">晚上<br>17:20 - 19:20</td>
+            <td><span class="empty-slot">—</span></td>
+            <td><span class="empty-slot">—</span></td>
+            <td><span class="empty-slot">—</span></td>
+            <td><span class="empty-slot">—</span></td>
+            <td><div class="class-block cb-1"><div class="cls-name">少林一班</div><div class="cls-teacher">🧑‍🏫 延杉师父</div></div></td>
+            <td><div class="class-block cb-1"><div class="cls-name">少林一班</div><div class="cls-teacher">🧑‍🏫 延杉师父</div></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend" style="margin-top:16px">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--c1)"></div>少林一班</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--c2)"></div>少林二班</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--c3)"></div>少林三四班</div>
+      <div class="legend-item" style="margin-left:16px">🔄 师父轮课（周二至周五 · 可选）</div>
+      <div class="legend-item">🧑‍🏫 周末分班上课 · 各班独立师父</div>
+    </div>
+  </div>
+
+  <!-- Monthly Calendars -->
+  <div class="card">
+    <div class="card-header">
+      <h3>📆 月历视图</h3>
+      <div class="sub">点击有课程的日期查看详情</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+</div>
+
+<!-- ==================== Tab 2: Attendance ==================== -->
+<div class="section" id="sec-attendance">
+
+  <!-- Stats -->
+  <div class="stats-grid" id="attStats"></div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>📝 出勤登记表</h3>
+      <div class="sub">勾选学员出勤 · 自动统计人数</div>
+    </div>
+    <div class="tools-bar">
+      <label style="font-size:14px;color:var(--text2)">选择月份：</label>
+      <select id="monthSelect" onchange="renderAttendanceTable()"></select>
+      <button class="btn btn-outline btn-sm" onclick="exportAttendance()">📊 导出统计</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" id="attTable"></table>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="card">
+    <div class="card-header">
+      <h3>📊 时段出勤统计</h3>
+      <div class="sub">按时间段和班级统计出勤人数</div>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table summary-table" id="summaryTable"></table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== Tab 3: Enrollment ==================== -->
+<div class="section" id="sec-enrollment">
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3>📊 学员报课信息统计</h3>
+        <div class="sub">总课时 / 有效期 / 消课数 / 剩余课时</div>
+      </div>
+      <div class="tools-bar" style="margin:0">
+        <button class="btn btn-outline btn-sm" onclick="exportEnrollment()">📊 导出报课统计</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table enrollment-table" id="enrollmentTable"></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>📋 说明</h3></div>
+    <div style="font-size:14px;line-height:1.8;color:var(--text2)">
+      <p>1. 点击表格中的「编辑」可填写总课时、有效期、生效/到期日期、6月前累计消课</p>
+      <p>2. 6-12月消课数根据「出勤统计」中登记的出勤记录自动计算</p>
+      <p>3. 距离到期天数 = 到期日期 - 今天；当前剩余 = 总课时 - 总消课数</p>
+      <p>4. 负值表示课时已用完或已超期</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== Tab 4: Roster ==================== -->
+<div class="section" id="sec-roster">
+
+  <div class="card">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div>
+      <h3>👥 班级学员名册</h3>
+      <div class="sub">添加 / 删除各班学员</div>
+    </div>
+    <button class="btn btn-primary" onclick="showAddStudentModal()" style="white-space:nowrap">＋ 添加学员</button>
+  </div>
+    <div class="roster-grid" id="rosterGrid"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>📋 使用说明</h3></div>
+    <div style="font-size:14px;line-height:1.8;color:var(--text2)">
+      <p>1. 在「学员管理」中为每个班级添加学员姓名</p>
+      <p>2. 在「出勤统计」中选择月份，点击每节课的「登记」按钮勾选出勤学员</p>
+      <p>3. 周二至周五为师父轮课日，登记时会显示【选择代课师父】单选项（延杉 / 恒瑞 / 恒福）</p>
+      <p>4. 一次登记会自动同步同一天同时段其它合堂班级（少林一班、二班、三四班）的代课师父</p>
+      <p>5. 系统自动统计每天每个时间段出勤人数，底部汇总表按班级和时段展示</p>
+      <p>6. 数据保存在浏览器本地，关闭不会丢失</p>
+      <p>7. 点击「打印课表」可打印课程安排表</p>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+// ===================== Supabase =====================
+const SUPABASE_URL = 'https://wftnszpquwlqmgcevkyj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_RJbXFWVO0UAsslybWKj1Ig_uRyi3dj1';
+let _supabase = null;
+try {
+  if (window.supabase && window.supabase.createClient) {
+    _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[Supabase] Client initialized');
+  } else {
+    console.warn('[Supabase] SDK not loaded, running in offline mode');
+  }
+} catch(e) {
+  console.warn('[Supabase] Init failed, running in offline mode:', e);
+}
+
+// ===================== Config =====================
+const DB_KEY = 'shaolin_schedule_v2';
+const START_DATE = new Date(2026, 7, 1);   // Aug 1, 2026
+const END_DATE = new Date(2026, 11, 31);    // Dec 31, 2026
+
+const DAY_NAMES = { 0:'周日', 1:'周一', 2:'周二', 3:'周三', 4:'周四', 5:'周五', 6:'周六' };
+const DAY_SHORT = { 0:'日', 1:'一', 2:'二', 3:'三', 4:'四', 5:'五', 6:'六' };
+const MONTH_NAMES = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+
+const CLASS_INFO = {
+  '少林一班': { color: 'c1', dot: 'dot-1', badge: 'bc-1' },
+  '少林二班': { color: 'c2', dot: 'dot-2', badge: 'bc-2' },
+  '少林三四班': { color: 'c3', dot: 'dot-3', badge: 'bc-3' },
+};
+
+// 周二至周五轮课的师父
+const ROTATING_TEACHERS = ['延杉师父', '恒瑞师父', '恒福师父'];
+
+const STUDENT_DETAILS = {
+  '恒贤-钟明洋': { gender: '男', birthYear: 2011 },
+  '恒鹏': { gender: '男', birthYear: '' },
+  '恒轩-吕浩铭': { gender: '男', birthYear: 2018 },
+  '恒林-周弘益': { gender: '男', birthYear: 2019 },
+  '恒志-蔡祥鹏': { gender: '男', birthYear: 2017 },
+  '恒烨-吴琦霖': { gender: '男', birthYear: 2023 },
+  '京京': { gender: '女', birthYear: '' },
+  '王沐辰': { gender: '男', birthYear: 2020 },
+  '生生（恒泽）': { gender: '男', birthYear: 2017 },
+  '韩佳祐（恒觉）': { gender: '男', birthYear: 2020 },
+  '旺仔': { gender: '男', birthYear: 2018 },
+  '恒悟-王子曰': { gender: '男', birthYear: 2018 },
+  '征征': { gender: '男', birthYear: 2017 },
+  '家家': { gender: '男', birthYear: 2019 },
+  '陈大樽（恒樽）': { gender: '男', birthYear: 2018 },
+  'Jasper仔仔': { gender: '男', birthYear: 2021 },
+  '清扬': { gender: '女', birthYear: 2015 },
+  '小月亮': { gender: '女', birthYear: 2018 },
+  '郑致': { gender: '男', birthYear: 2018 },
+  '郑与': { gender: '男', birthYear: 2014 },
+  '李秉桦/恒荣': { gender: '男', birthYear: 2022 },
+  'Kira': { gender: '女', birthYear: 1990 },
+  'Warren': { gender: '男', birthYear: 2018 },
+  'Richessa': { gender: '女', birthYear: 2021 },
+  '大头': { gender: '男', birthYear: 2020 },
+  '黄老师': { gender: '女', birthYear: '' },
+  '邢仁和': { gender: '男', birthYear: 2022 },
+  '吴伟宏': { gender: '男', birthYear: 2012 },
+  'Carl': { gender: '男', birthYear: 1995 },
+  'Ngghan': { gender: '男', birthYear: 1999 },
+  '吴雨桐': { gender: '女', birthYear: 2009 },
+  'Liam': { gender: '女', birthYear: 2023 },
+  'Tarsh': { gender: '女', birthYear: '' },
+  '庄伟涵': { gender: '女', birthYear: '' },
+  '林佳怡': { gender: '女', birthYear: '' },
+  '刘佑佑': { gender: '男', birthYear: '' },
+};
+
+// Weekly schedule config: dayOfWeek -> sessions
+// 周二至周日上课，周一休息
+// 周二至周五：上午和下午所有班级（一班、二班、三四班）合上，师父轮课
+// 周六、周日：分班上课，不同班级由不同师父
+//   上午 9:30-11:30 → 少林二班（延杉师父）
+//   下午 15:00-17:00 → 少林三四班（恒福师父、恒瑞师父）
+//   晚上 17:20-19:20 → 少林一班（延杉师父）
+const SCHEDULE = [
+  // 周二
+  { dow: 2, time: '09:30-11:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 2, time: '15:00-17:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  // 周三
+  { dow: 3, time: '09:30-11:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 3, time: '15:00-17:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  // 周四
+  { dow: 4, time: '09:30-11:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 4, time: '15:00-17:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  // 周五
+  { dow: 5, time: '09:30-11:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 5, time: '15:00-17:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  // 周六
+  { dow: 6, time: '09:30-11:30', timeLabel: '上午', classes: ['少林二班'], teacher: '延杉师父' },
+  { dow: 6, time: '15:00-17:00', timeLabel: '下午', classes: ['少林三四班'], teacher: '恒福师父、恒瑞师父' },
+  { dow: 6, time: '17:20-19:20', timeLabel: '晚上', classes: ['少林一班'], teacher: '延杉师父' },
+  // 周日
+  { dow: 0, time: '09:30-11:30', timeLabel: '上午', classes: ['少林二班'], teacher: '延杉师父' },
+  { dow: 0, time: '15:00-17:00', timeLabel: '下午', classes: ['少林三四班'], teacher: '恒福师父、恒瑞师父' },
+  { dow: 0, time: '17:20-19:20', timeLabel: '晚上', classes: ['少林一班'], teacher: '延杉师父' },
+];
+
+// Attendance-only schedule: 1-hour sub-sessions for check-in
+// Weekly schedule (SCHEDULE) remains 2-hour blocks for display.
+// This is only used by the attendance registration table.
+// Tue-Fri: 4 x 1-hour slots (no evening)
+// Sat-Sun: 6 x 1-hour slots (including evening)
+const ATTENDANCE_SCHEDULE = [
+  // 周二
+  { dow: 2, time: '09:30-10:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 2, time: '10:30-11:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 2, time: '15:00-16:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 2, time: '16:00-17:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  // 周三
+  { dow: 3, time: '09:30-10:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 3, time: '10:30-11:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 3, time: '15:00-16:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 3, time: '16:00-17:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  // 周四
+  { dow: 4, time: '09:30-10:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 4, time: '10:30-11:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 4, time: '15:00-16:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 4, time: '16:00-17:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  // 周五
+  { dow: 5, time: '09:30-10:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 5, time: '10:30-11:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 5, time: '15:00-16:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  { dow: 5, time: '16:00-17:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  // 周六
+  { dow: 6, time: '09:30-10:30', timeLabel: '上午', classes: ['少林二班'], teacher: '延杉师父' },
+  { dow: 6, time: '10:30-11:30', timeLabel: '上午', classes: ['少林二班'], teacher: '延杉师父' },
+  { dow: 6, time: '15:00-16:00', timeLabel: '下午', classes: ['少林三四班'], teacher: '恒福师父、恒瑞师父' },
+  { dow: 6, time: '16:00-17:00', timeLabel: '下午', classes: ['少林三四班'], teacher: '恒福师父、恒瑞师父' },
+  { dow: 6, time: '17:20-18:20', timeLabel: '晚上', classes: ['少林一班'], teacher: '延杉师父' },
+  { dow: 6, time: '18:20-19:20', timeLabel: '晚上', classes: ['少林一班'], teacher: '延杉师父' },
+  // 周日
+  { dow: 0, time: '09:30-10:30', timeLabel: '上午', classes: ['少林二班'], teacher: '延杉师父' },
+  { dow: 0, time: '10:30-11:30', timeLabel: '上午', classes: ['少林二班'], teacher: '延杉师父' },
+  { dow: 0, time: '15:00-16:00', timeLabel: '下午', classes: ['少林三四班'], teacher: '恒福师父、恒瑞师父' },
+  { dow: 0, time: '16:00-17:00', timeLabel: '下午', classes: ['少林三四班'], teacher: '恒福师父、恒瑞师父' },
+  { dow: 0, time: '17:20-18:20', timeLabel: '晚上', classes: ['少林一班'], teacher: '延杉师父' },
+  { dow: 0, time: '18:20-19:20', timeLabel: '晚上', classes: ['少林一班'], teacher: '延杉师父' },
+];
+
+// ===================== Data =====================
+function buildDefaultStudents() {
+  const defaultStudents = {
+      '少林一班': [
+        { name: '恒贤-钟明洋', phone: '', note: '' },
+        { name: '恒烨-吴琦霖', phone: '', note: '弟子班' },
+        { name: '恒轩-吕浩铭', phone: '', note: '' },
+        { name: '恒志-蔡祥鹏', phone: '', note: '' },
+        { name: '恒林-周弘益', phone: '', note: '' },
+        { name: '恒悟-王子曰', phone: '', note: '' },
+        { name: 'Kira', phone: '', note: '' },
+      ],
+      '少林二班': [
+        { name: '征征', phone: '', note: '' },
+        { name: '家家', phone: '', note: '' },
+        { name: '郑致', phone: '', note: '' },
+        { name: '郑与', phone: '', note: '' },
+        { name: '清扬', phone: '', note: '' },
+        { name: '小月亮', phone: '', note: '' },
+        { name: '京京', phone: '', note: '' },
+        { name: '郭子期', phone: '', note: '' },
+        { name: '郭瀚文', phone: '', note: '' },
+        { name: '李秉桦/恒荣', phone: '', note: '' },
+        { name: '陈宇轩', phone: '', note: '' },
+        { name: '邢仁和', phone: '', note: '' },
+        { name: '黄老师', phone: '', note: '' },
+      ],
+      '少林三四班': [
+        { name: '群仔', phone: '', note: '' },
+        { name: '王林辰', phone: '', note: '' },
+        { name: '黄俊铭', phone: '', note: '' },
+        { name: '韩佳祐', phone: '', note: '' },
+        { name: '彭斯琳', phone: '', note: '' },
+        { name: '刘尊宏', phone: '', note: '' },
+        { name: '刘夏尊', phone: '', note: '' },
+        { name: '升达', phone: '', note: '' },
+        { name: '升云人', phone: '', note: '' },
+        { name: 'Warren', phone: '', note: '' },
+        { name: 'Richessa', phone: '', note: '' },
+        { name: '吴炯桐', phone: '', note: '' },
+        { name: 'Carl', phone: '', note: '' },
+        { name: '许伟渊', phone: '', note: '' },
+        { name: 'Tarsh', phone: '', note: '' },
+        { name: 'Nate Dy', phone: '', note: '' },
+        { name: '林佳怡', phone: '', note: '' },
+        { name: '大头', phone: '', note: '' },
+        { name: 'Jasper付', phone: '', note: '' },
+        { name: 'LEO', phone: '', note: '' },
+        { name: 'JANONE', phone: '', note: '' },
+        { name: '张欣', phone: '', note: '' },
+        { name: 'SASA', phone: '', note: '' },
+        { name: 'stanly tang', phone: '', note: '' },
+        { name: '王佳雯', phone: '', note: '' },
+        { name: 'sebie tang信仪', phone: '', note: '' },
+        { name: '林欣悦', phone: '', note: '' },
+        { name: '张睿洋', phone: '', note: '' },
+        { name: '杨淳海', phone: '', note: '' },
+        { name: '杨沐黎', phone: '', note: '' },
+        { name: '梁泊宁', phone: '', note: '' },
+        { name: '李宇敏', phone: '', note: '' },
+        { name: '李宇彬', phone: '', note: '' },
+        { name: '杨志锐', phone: '', note: '' },
+        { name: '陈吉泽', phone: '', note: '' },
+        { name: 'Christine Borromeo', phone: '', note: '' },
+        { name: '刘佑佑', phone: '', note: '' },
+        { name: '旺仔', phone: '', note: '', gender: '男', birthYear: 2018 },
+        { name: '吴雨桐', phone: '', note: '', gender: '女', birthYear: 2009 },
+        { name: '庄伟涵', phone: '', note: '', gender: '女', birthYear: '' },
+        { name: '林佳怡', phone: '', note: '', gender: '女', birthYear: '' },
+      ],
+    };
+  Object.keys(defaultStudents).forEach(cls => {
+    defaultStudents[cls] = defaultStudents[cls].map(st => {
+      const detail = STUDENT_DETAILS[st.name];
+      return detail ? { ...st, gender: detail.gender, birthYear: detail.birthYear } : st;
+    });
+  });
+  return defaultStudents;
+}
+
+function loadData() {
+  const defaultStudents = buildDefaultStudents();
+  const raw = localStorage.getItem(DB_KEY);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      // 学员名册始终以源文件为准，实现"文件更新 -> 链接实时更新"
+      // 出勤/报课数据保留在浏览器本地
+      parsed.students = defaultStudents;
+      return parsed;
+    } catch(e){}
+  }
+  return {
+    students: defaultStudents,
+    attendance: {}, // key: "date|time|className" -> [student names]
+    enrollment: {}, // key: "className|studentName" -> { totalHours, validDays, startDate, endDate, beforeJune }
+    sourceVersion: SOURCE_VERSION,
+  };
+}
+
+// Async load: Supabase first, localStorage fallback
+async function loadDataAsync() {
+  const defaultStudents = buildDefaultStudents();
+  if (!_supabase) return loadData();
+  const session = await _supabase.auth.getSession().then(r => r.data.session).catch(() => null);
+  if (session) {
+    try {
+      const [{ data: stuRows, error: e1 }, { data: attRows, error: e2 }, { data: enrRows, error: e3 }] = await Promise.all([
+        _supabase.from('students').select('*').order('class_name').order('name'),
+        _supabase.from('attendance_records').select('*').order('date'),
+        _supabase.from('enrollment').select('*')
+      ]);
+      if (e1) console.warn('[Supabase] students error:', e1.message);
+      if (e2) console.warn('[Supabase] attendance error:', e2.message);
+      if (e3) console.warn('[Supabase] enrollment error:', e3.message);
+      const students = {};
+      ['少林一班','少林二班','少林三四班'].forEach(c => { students[c] = []; });
+      if (stuRows && stuRows.length > 0) {
+        stuRows.forEach(r => {
+          if (!students[r.class_name]) students[r.class_name] = [];
+          students[r.class_name].push({
+            name: r.name, phone: r.phone||'', gender: r.gender||'男',
+            birthYear: r.birth_year||'', note: r.note||''
+          });
+        });
+      }
+      const attendance = {};
+      if (attRows) attRows.forEach(r => {
+        attendance[r.date+'|'+r.time+'|'+r.class_name] = { teacher: r.teacher||'', students: r.student_names||[] };
+      });
+      const enrollment = {};
+      if (enrRows) enrRows.forEach(r => {
+        enrollment[r.class_name+'|'+r.student_name] = {
+          totalHours: r.total_hours||0, validDays: r.valid_days||0,
+          startDate: r.start_date||'', endDate: r.end_date||'',
+          beforeJune: r.before_june||0, isDisciple: r.is_disciple||false
+        };
+      });
+      const hasCloud = (stuRows && stuRows.length > 0) || (attRows && attRows.length > 0) || (enrRows && enrRows.length > 0);
+      if (hasCloud) {
+        console.log('[Data] Loaded from Supabase');
+        return { students, attendance, enrollment, sourceVersion: SOURCE_VERSION, _migrated1hour: true };
+      }
+      // Cloud empty → migrate localStorage data to Supabase
+      const local = loadData();
+      const hasLocal = Object.keys(local.attendance).length > 0 || Object.keys(local.enrollment).length > 0;
+      if (hasLocal) {
+        console.log('[Data] Migrating localStorage to Supabase...');
+        await syncAllToSupabase(local);
+        console.log('[Data] Migration complete');
+      }
+      return local;
+    } catch(e) {
+      console.warn('[Supabase] Load failed, using localStorage:', e);
+    }
+  }
+  return loadData();
+}
+
+function saveData() {
+  const toSave = {
+    attendance: db.attendance || {},
+    enrollment: db.enrollment || {},
+    sourceVersion: SOURCE_VERSION,
+    _migrated1hour: db._migrated1hour || false,
+  };
+  localStorage.setItem(DB_KEY, JSON.stringify(toSave));
+  // Sync to Supabase (background, non-blocking)
+  if (_supabase) _syncCloud().catch(e => console.warn('[Supabase] Background sync failed:', e));
+}
+async function _syncCloud() {
+  if (!_supabase) return;
+  try {
+    // Sync attendance
+    const attRows = [];
+    Object.entries(db.attendance).forEach(([key, rec]) => {
+      const p = key.split('|');
+      if (p.length === 3 && rec && rec.students) attRows.push({ date:p[0], time:p[1], class_name:p[2], teacher:rec.teacher||'', student_names:rec.students });
+    });
+    if (attRows.length > 0) {
+      const { error: e1 } = await _supabase.from('attendance_records').upsert(attRows, { onConflict: 'date,time,class_name' });
+      if (e1) { console.error('[Supabase] attendance sync:', e1.message); toast('出勤数据同步失败：' + e1.message); }
+    }
+    // Sync enrollment
+    const enrRows = [];
+    Object.entries(db.enrollment).forEach(([key, rec]) => {
+      const p = key.split('|');
+      if (p.length === 2) enrRows.push({ class_name:p[0], student_name:p[1], total_hours:rec.totalHours||0, valid_days:rec.validDays||0, start_date:rec.startDate||null, end_date:rec.endDate||null, before_june:rec.beforeJune||0, is_disciple:rec.isDisciple||false });
+    });
+    if (enrRows.length > 0) {
+      const { error: e2 } = await _supabase.from('enrollment').upsert(enrRows, { onConflict: 'class_name,student_name' });
+      if (e2) { console.error('[Supabase] enrollment sync:', e2.message); toast('报课数据同步失败：' + e2.message); }
+    }
+    // Sync students (deduplicate by class_name+name)
+    const stuMap = new Map();
+    Object.entries(db.students).forEach(([cls, list]) => {
+      list.forEach(s => { stuMap.set(cls + '|' + s.name, { class_name:cls, name:s.name, phone:s.phone||null, gender:s.gender||'男', birth_year:s.birthYear||null, note:s.note||null }); });
+    });
+    const stuRows = [...stuMap.values()];
+    if (stuRows.length > 0) {
+      const { error: e3 } = await _supabase.from('students').upsert(stuRows, { onConflict: 'class_name,name' });
+      if (e3) { console.error('[Supabase] students sync:', e3.message); toast('学员数据同步失败：' + e3.message); }
+    }
+  } catch(e) { console.error('[Supabase] sync error:', e); toast('云端同步失败，请检查网络'); }
+}
+async function syncAllToSupabase(data) {
+  if (!_supabase) return;
+  try {
+    const attRows = [];
+    Object.entries(data.attendance||{}).forEach(([key, rec]) => {
+      const p = key.split('|');
+      if (p.length === 3 && rec && rec.students) attRows.push({ date:p[0], time:p[1], class_name:p[2], teacher:rec.teacher||'', student_names:rec.students });
+    });
+    if (attRows.length > 0) await _supabase.from('attendance_records').upsert(attRows, { onConflict: 'date,time,class_name' });
+    const enrRows = [];
+    Object.entries(data.enrollment||{}).forEach(([key, rec]) => {
+      const p = key.split('|');
+      if (p.length === 2) enrRows.push({ class_name:p[0], student_name:p[1], total_hours:rec.totalHours||0, valid_days:rec.validDays||0, start_date:rec.startDate||null, end_date:rec.endDate||null, before_june:rec.beforeJune||0, is_disciple:rec.isDisciple||false });
+    });
+    if (enrRows.length > 0) await _supabase.from('enrollment').upsert(enrRows, { onConflict: 'class_name,student_name' });
+    const stuMap2 = new Map();
+    Object.entries(data.students||{}).forEach(([cls, list]) => {
+      list.forEach(s => { stuMap2.set(cls + '|' + s.name, { class_name:cls, name:s.name, phone:s.phone||null, gender:s.gender||'男', birth_year:s.birthYear||null, note:s.note||null }); });
+    });
+    const stuRows = [...stuMap2.values()];
+    if (stuRows.length > 0) await _supabase.from('students').upsert(stuRows, { onConflict: 'class_name,name' });
+    toast('数据已迁移到云端');
+  } catch(e) { console.error('[Supabase] migration error:', e); toast('迁移失败：' + e.message); }
+}
+
+// Bump this whenever default roster/schedule structure changes.
+// Existing browsers will run migrations once, then preserve user edits until the source file changes again.
+const SOURCE_VERSION = '2026-08-15-v7';
+
+// Migrate old class name '少林三班' -> '少林三四班'
+function migrateData(data) {
+  if (!data) return data;
+  let changed = false;
+  if (data.students && data.students['少林三班']) {
+    data.students['少林三四班'] = data.students['少林三班'];
+    delete data.students['少林三班'];
+    changed = true;
+  }
+  if (data.attendance) {
+    const newAtt = {};
+    for (const [k, v] of Object.entries(data.attendance)) {
+      const newKey = k.replace(/\|少林三班$/, '|少林三四班');
+      newAtt[newKey] = v;
+      if (newKey !== k) changed = true;
+    }
+    data.attendance = newAtt;
+  }
+  return { data, changed };
+}
+
+let db = null; // Will be loaded async
+
+// Normalize student fields
+function normalizeStudents() {
+  let changed = false;
+  Object.values(db.students).forEach(list => {
+    list.forEach(st => {
+      if (st.gender === undefined) { st.gender = ''; changed = true; }
+      if (st.birthYear === undefined) { st.birthYear = ''; changed = true; }
+      if (st.note === undefined) { st.note = ''; changed = true; }
+      if (st.phone === undefined) { st.phone = ''; changed = true; }
+    });
+  });
+  return changed;
+}
+
+// Patch existing localStorage records with canonical gender/birthYear
+function patchExistingStudents() {
+  let changed = false;
+  Object.keys(db.students || {}).forEach(cls => {
+    (db.students[cls] || []).forEach(st => {
+      const detail = STUDENT_DETAILS[st.name];
+      if (detail) {
+        if (!st.gender && detail.gender) { st.gender = detail.gender; changed = true; }
+        if (!st.birthYear && detail.birthYear) { st.birthYear = detail.birthYear; changed = true; }
+      }
+    });
+  });
+  return changed;
+}
+
+// Normalize enrollment fields
+function normalizeEnrollment() {
+  if (!db.enrollment) { db.enrollment = {}; return true; }
+  let changed = false;
+  Object.values(db.enrollment).forEach(e => {
+    if (e.totalHours === undefined) { e.totalHours = 0; changed = true; }
+    if (e.validDays === undefined) { e.validDays = 0; changed = true; }
+    if (e.startDate === undefined) { e.startDate = ''; changed = true; }
+    if (e.endDate === undefined) { e.endDate = ''; changed = true; }
+    if (e.beforeJune === undefined) { e.beforeJune = 0; changed = true; }
+    if (e.isDisciple === undefined) { e.isDisciple = false; changed = true; }
+  });
+  // Auto-detect disciple class students from their note field
+  if (db.students) {
+    Object.keys(db.students).forEach(cls => {
+      db.students[cls].forEach(st => {
+        if (st.note && st.note.indexOf('弟子班') >= 0) {
+          const key = enrollKey(cls, st.name);
+          if (!db.enrollment[key]) db.enrollment[key] = { totalHours: 0, validDays: 0, startDate: '', endDate: '', beforeJune: 0, isDisciple: false };
+          if (!db.enrollment[key].isDisciple) { db.enrollment[key].isDisciple = true; changed = true; }
+        }
+      });
+    });
+  }
+  return changed;
+}
+
+// DISABLED 2026-08-05: Was overwriting user's manual roster edits.
+// Auto-appending students from a hardcoded list is unsafe — user deletions got reversed.
+function appendNewStudents() {
+  return false;
+}
+
+// DISABLED 2026-08-05: Was deleting students the user may have intentionally placed.
+function cleanupClass34() {
+  return false;
+}
+
+// Seed 少林一班 enrollment defaults from the spreadsheet snapshot on 2026-08-04.
+// Only writes a record if one doesn't already exist (won't clobber user edits).
+function enrollClass1Defaults() {
+  const DEFAULTS = {
+    '恒贤-钟明洋': { totalHours: 0,  validDays: 0,   startDate: '2026-06-10', endDate: '',           beforeJune: 0  },
+    '恒烨-吴琦霖': { totalHours: 0,  validDays: 0,   startDate: '',          endDate: '2026-12-08', beforeJune: 0  },
+    '恒悟-王子曰': { totalHours: 40, validDays: 120, startDate: '2026-01-24', endDate: '2026-05-24', beforeJune: 14 },
+    'Kira':        { totalHours: 40, validDays: 120, startDate: '2026-01-10', endDate: '2026-05-10', beforeJune: 20 },
+  };
+  let changed = false;
+  if (!db.enrollment) db.enrollment = {};
+  Object.entries(DEFAULTS).forEach(([name, d]) => {
+    const key = '少林一班|' + name;
+    if (!db.enrollment[key]) {
+      db.enrollment[key] = { ...d, isDisciple: false };
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+// Seed 少林二班 enrollment defaults from the spreadsheet snapshot on 2026-08-04.
+// Only writes a record if one doesn't already exist (won't clobber user edits).
+function enrollClass2Defaults() {
+  const DEFAULTS = {
+    '征征':         { totalHours: 45,  validDays: 120, startDate: '2026-01-25', endDate: '2026-05-25', beforeJune: 38 },
+    '家家':         { totalHours: 45,  validDays: 120, startDate: '2026-02-01', endDate: '2026-06-01', beforeJune: 31 },
+    '郑致':         { totalHours: 30,  validDays: 90,  startDate: '2026-03-15', endDate: '2026-06-13', beforeJune: 13 },
+    '郑与':         { totalHours: 30,  validDays: 90,  startDate: '2026-03-22', endDate: '2026-06-20', beforeJune: 10 },
+    '清扬':         { totalHours: 40,  validDays: 120, startDate: '2026-01-11', endDate: '2026-05-11', beforeJune: 31 },
+    '小月亮':       { totalHours: 40,  validDays: 120, startDate: '2026-01-11', endDate: '2026-05-11', beforeJune: 34 },
+    // 京京 截图里没有报课数据，留空不录
+    '郭子期':       { totalHours: 32,  validDays: 90,  startDate: '2026-04-12', endDate: '2026-07-11', beforeJune: 10 },
+    '郭瀚文':       { totalHours: 32,  validDays: 90,  startDate: '2026-04-12', endDate: '2026-07-11', beforeJune: 10 },
+    '李秉桦/恒荣':  { totalHours: 200, validDays: 365, startDate: '2026-05-28', endDate: '2027-05-28', beforeJune: 7  },
+    '陈宇轩':       { totalHours: 30,  validDays: 60,  startDate: '2026-07-17', endDate: '2026-09-29', beforeJune: 0  },
+    '邢仁和':       { totalHours: 96,  validDays: 365, startDate: '2026-02-10', endDate: '2027-02-10', beforeJune: 40 },
+    '黄老师':       { totalHours: 100, validDays: 365, startDate: '2026-06-05', endDate: '2027-06-05', beforeJune: 0  },
+  };
+  let changed = false;
+  if (!db.enrollment) db.enrollment = {};
+  Object.entries(DEFAULTS).forEach(([name, d]) => {
+    const key = '少林二班|' + name;
+    if (!db.enrollment[key]) {
+      db.enrollment[key] = { ...d, isDisciple: false };
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+// Seed 少林三四班 enrollment defaults from the spreadsheet snapshot on 2026-08-04.
+// Only writes a record if one doesn't already exist (won't clobber user edits).
+// 截图里没有总课时/有效期日期的学员（群仔/王林辰/黄俊铭/韩佳祐 row 4/彭斯琳/刘尊宏/刘夏尊）跳过。
+function enrollClass34Defaults() {
+  const DEFAULTS = {
+    '韩佳祐':       { totalHours: 40, validDays: 120, startDate: '',          endDate: '',           beforeJune: 0  }, // row 5 待定
+    '升达':         { totalHours: 13, validDays: 30,  startDate: '2025-11-23', endDate: '2025-12-23', beforeJune: 10 },
+    '升云人':       { totalHours: 13, validDays: 30,  startDate: '2025-11-23', endDate: '2025-12-23', beforeJune: 10 },
+    'Warren':       { totalHours: 40, validDays: 120, startDate: '2026-01-10', endDate: '2026-05-10', beforeJune: 38 },
+    'Richessa':     { totalHours: 40, validDays: 120, startDate: '2026-01-10', endDate: '2026-05-10', beforeJune: 37 },
+    '吴炯桐':       { totalHours: 106,validDays: 365, startDate: '2026-03-12', endDate: '2027-03-12', beforeJune: 15 },
+    'Carl':         { totalHours: 30, validDays: 90,  startDate: '2026-05-28', endDate: '2026-08-29', beforeJune: 21 },
+    '许伟渊':       { totalHours: 200,validDays: 365, startDate: '2026-05-31', endDate: '2027-05-31', beforeJune: 0  },
+    'Tarsh':        { totalHours: 60, validDays: 90,  startDate: '2026-07-15', endDate: '2026-09-13', beforeJune: 0  },
+    'Nate Dy':      { totalHours: 30, validDays: 90,  startDate: '2026-02-28', endDate: '2026-05-29', beforeJune: 6  },
+    '林佳怡':       { totalHours: 192,validDays: 365, startDate: '2026-04-14', endDate: '2027-04-14', beforeJune: 47 },
+    '大头':         { totalHours: 120,validDays: 425, startDate: '2026-01-13', endDate: '2027-03-14', beforeJune: 69 },
+    'Jasper付':     { totalHours: 97, validDays: 395, startDate: '2026-01-10', endDate: '2027-02-09', beforeJune: 57 },
+    'LEO':          { totalHours: 30, validDays: 150, startDate: '2026-05-30', endDate: '2026-10-27', beforeJune: 2  },
+    'JANONE':       { totalHours: 10, validDays: 60,  startDate: '2026-06-12', endDate: '2026-08-11', beforeJune: 0  },
+    '张欣':         { totalHours: 100,validDays: 365, startDate: '2026-05-30', endDate: '2027-05-30', beforeJune: 0  },
+    'SASA':         { totalHours: 10, validDays: 60,  startDate: '2026-06-10', endDate: '2026-08-11', beforeJune: 2  },
+    'stanly tang':  { totalHours: 30, validDays: 150, startDate: '',          endDate: '',           beforeJune: 0  }, // 待定
+    '王佳雯':       { totalHours: 10, validDays: 60,  startDate: '2026-06-14', endDate: '2026-08-13', beforeJune: 0  },
+    'sebie tang信仪':{ totalHours: 10, validDays: 60,  startDate: '2026-06-20', endDate: '2026-08-19', beforeJune: 0  },
+    '林欣悦':       { totalHours: 30, validDays: 150, startDate: '2026-07-02', endDate: '2026-11-29', beforeJune: 0  },
+    '张睿洋':       { totalHours: 30, validDays: 150, startDate: '2026-07-04', endDate: '2026-12-02', beforeJune: 0  },
+    '杨淳海':       { totalHours: 30, validDays: 150, startDate: '2026-07-04', endDate: '2026-12-02', beforeJune: 0  },
+    '杨沐黎':       { totalHours: 30, validDays: 150, startDate: '2026-07-04', endDate: '2026-12-02', beforeJune: 0  },
+    '梁泊宁':       { totalHours: 30, validDays: 150, startDate: '2026-07-04', endDate: '2026-12-02', beforeJune: 0  },
+    '李宇敏':       { totalHours: 10, validDays: 60,  startDate: '2026-07-17', endDate: '2026-09-15', beforeJune: 0  },
+    '李宇彬':       { totalHours: 10, validDays: 60,  startDate: '2026-07-17', endDate: '2026-09-15', beforeJune: 0  },
+    '杨志锐':       { totalHours: 30, validDays: 150, startDate: '2026-07-19', endDate: '2026-12-16', beforeJune: 0  },
+    '陈吉泽':       { totalHours: 0,  validDays: 0,   startDate: '2026-07-30', endDate: '2026-07-30', beforeJune: 0  }, // 截图无课时/天数，但有日期
+    'Christine Borromeo': { totalHours: 10, validDays: 60, startDate: '2026-07-26', endDate: '2026-09-24', beforeJune: 0 },
+    '刘佑佑':       { totalHours: 30, validDays: 150, startDate: '2026-07-31', endDate: '2026-12-28', beforeJune: 0  },
+  };
+  let changed = false;
+  if (!db.enrollment) db.enrollment = {};
+  Object.entries(DEFAULTS).forEach(([name, d]) => {
+    const key = '少林三四班|' + name;
+    if (!db.enrollment[key]) {
+      db.enrollment[key] = { ...d, isDisciple: false };
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+// DISABLED 2026-08-05: This function was overwriting user's manual name edits
+// every time SOURCE_VERSION changed. Name migrations should NOT be automatic.
+// User-edited names in localStorage are the source of truth now.
+function migrateStudentNames() {
+  return false;
+}
+
+// Migrate 2-hour attendance records to 1-hour sub-slots (idempotent).
+// Old key: "date|09:30-11:30|class" → new keys: "date|09:30-10:30|class" + "date|10:30-11:30|class"
+// Does NOT delete old records. Only runs once per SOURCE_VERSION bump.
+function migrateAttendanceTo1Hour() {
+  if (!db.attendance) return false;
+  if (db._migrated1hour) return false; // idempotent flag
+  const timeMap = {
+    '09:30-11:30': ['09:30-10:30', '10:30-11:30'],
+    '15:00-17:00': ['15:00-16:00', '16:00-17:00'],
+    '17:20-19:20': ['17:20-18:20', '18:20-19:20'],
+  };
+  let migrated = 0;
+  const oldKeys = Object.keys(db.attendance);
+  for (const key of oldKeys) {
+    const parts = key.split('|');
+    if (parts.length !== 3) continue;
+    const [date, time, cls] = parts;
+    if (!timeMap[time]) continue;
+    const rec = db.attendance[key];
+    const [t1, t2] = timeMap[time];
+    const k1 = date + '|' + t1 + '|' + cls;
+    const k2 = date + '|' + t2 + '|' + cls;
+    // Only create 1-hour records if they don't already exist
+    if (!db.attendance[k1]) {
+      if (Array.isArray(rec)) {
+        db.attendance[k1] = { teacher: '', students: [...rec] };
+      } else if (rec && rec.students) {
+        db.attendance[k1] = { teacher: rec.teacher || '', students: [...rec.students] };
+      }
+      migrated++;
+    }
+    if (!db.attendance[k2]) {
+      if (Array.isArray(rec)) {
+        db.attendance[k2] = { teacher: '', students: [...rec] };
+      } else if (rec && rec.students) {
+        db.attendance[k2] = { teacher: rec.teacher || '', students: [...rec.students] };
+      }
+      migrated++;
+    }
+  }
+  db._migrated1hour = true;
+  if (migrated > 0) {
+    console.log('[Migration] Split ' + migrated + ' attendance records from 2h to 1h slots');
+  }
+  return migrated > 0;
+}
+
+// Run all migrations that may touch user data. Only executes when SOURCE_VERSION changes.
+function runMigrations() {
+  let changed = false;
+  const migration = migrateData(db);
+  if (migration.changed) { db = migration.data; changed = true; }
+  if (migrateStudentNames()) changed = true;
+  if (normalizeStudents()) changed = true;
+  if (patchExistingStudents()) changed = true;
+  if (normalizeEnrollment()) changed = true;
+  if (appendNewStudents()) changed = true;
+  if (cleanupClass34()) changed = true;
+  if (enrollClass1Defaults()) changed = true;
+  if (enrollClass2Defaults()) changed = true;
+  if (enrollClass34Defaults()) changed = true;
+  if (migrateAttendanceTo1Hour()) changed = true;
+  db.sourceVersion = SOURCE_VERSION;
+  return true; // always save so the version is recorded
+}
+
+// Run only safe normalizations that won't revert user edits.
+function runLightNormalizations() {
+  let changed = false;
+  if (normalizeStudents()) changed = true;
+  if (normalizeEnrollment()) changed = true;
+  return changed;
+}
+
+// Async initialization with Supabase Auth
+(async function initApp() {
+  try {
+    if (_supabase) {
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (!session) {
+        document.getElementById('app-loader').style.display = 'none';
+        document.getElementById('login-overlay').style.display = 'flex';
+        return;
+      }
+      await _startApp(session);
+    } else {
+      // Supabase SDK not available → run in offline mode with localStorage
+      console.warn('[App] Running in offline mode (Supabase unavailable)');
+      document.getElementById('login-overlay').style.display = 'none';
+      db = loadData();
+      if (db.sourceVersion !== SOURCE_VERSION) { runMigrations(); saveData(); }
+      else if (runLightNormalizations()) { saveData(); }
+      updateStats();
+      renderCalendars();
+      initMonthSelect();
+      renderRoster();
+      renderEnrollmentTable();
+      toast('离线模式：Supabase 未连接，数据仅保存在本设备');
+      const loader = document.getElementById('app-loader');
+      if (loader) loader.style.display = 'none';
+    }
+  } catch(e) {
+    console.error('[Auth] Init error:', e);
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('app-loader').style.display = 'none';
+    // Last resort: try to load from localStorage
+    try {
+      db = db || loadData();
+      updateStats(); renderCalendars(); initMonthSelect();
+      renderRoster(); renderEnrollmentTable();
+      toast('加载出错，已使用本地缓存数据');
+    } catch(e2) {
+      console.error('[App] Fatal:', e2);
+      document.getElementById('login-overlay').style.display = 'flex';
+    }
+  }
+})();
+if (_supabase) {
+_supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    document.getElementById('login-overlay').style.display = 'flex';
+    document.getElementById('auth-bar').style.display = 'none';
+  } else if (event === 'SIGNED_IN' && session) {
+    _startApp(session);
+  }
+});
+}
+async function handleLogin() {
+  if (!_supabase) { toast('Supabase 未连接，无法登录'); return; }
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  btn.disabled = true; btn.textContent = '登录中...'; errEl.style.display = 'none';
+  const { error } = await _supabase.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = '登录';
+  if (error) { errEl.textContent = '登录失败：' + error.message; errEl.style.display = 'block'; }
+}
+async function handleLogout() {
+  if (_supabase) await _supabase.auth.signOut();
+  toast('已退出登录');
+}
+async function _startApp(session) {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('auth-bar').style.display = 'flex';
+  document.getElementById('auth-email').textContent = session.user.email;
+  try {
+    db = await loadDataAsync();
+  } catch(e) {
+    console.warn('[App] loadDataAsync failed, using localStorage:', e);
+    db = loadData();
+  }
+  if (db.sourceVersion !== SOURCE_VERSION) {
+    runMigrations();
+    saveData();
+  } else if (runLightNormalizations()) {
+    saveData();
+  }
+  updateStats();
+  renderCalendars();
+  initMonthSelect();
+  renderRoster();
+  renderEnrollmentTable();
+  const loader = document.getElementById('app-loader');
+  if (loader) loader.style.display = 'none';
+}
+
+// ===================== Helpers =====================
+function fmtDate(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function attKey(date, time, cls) { return date + '|' + time + '|' + cls; }
+
+// 出勤记录：{ teacher: 'xxx', students: [names] }。兼容旧格式（纯数组）。
+// 只读版本，永不修改 db.attendance。空记录返回 {teacher:'', students:[]}。
+function getAttRecord(date, time, className) {
+  const key = attKey(date, time, className);
+  const rec = db.attendance[key];
+  if (!rec) return { teacher: '', students: [] };
+  if (Array.isArray(rec)) return { teacher: '', students: rec };
+  return rec;
+}
+
+// 写入版本：确保 db.attendance[key] 是新格式（用于保存按钮 / 增删学员）
+function ensureAttRecord(date, time, className) {
+  const key = attKey(date, time, className);
+  let rec = db.attendance[key];
+  if (!rec || Array.isArray(rec)) {
+    rec = { teacher: '', students: Array.isArray(rec) ? rec : [] };
+    db.attendance[key] = rec;
+  }
+  return rec;
+}
+
+// 查找同一天同时段最近一次轮课日（周二-周五）的师父，作为默认值
+function getLastRotatingTeacher(date, time) {
+  const classes = ['少林一班','少林二班','少林三四班'];
+  // 优先今天同时段其它班级
+  for (const cls of classes) {
+    const r = getAttRecord(date, time, cls);
+    if (r.teacher) return r.teacher;
+  }
+  return '';
+}
+function toast(msg) { const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }
+function esc(s) {
+  if (s === undefined || s === null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Generate all sessions
+function generateAllSessions() {
+  const sessions = [];
+  for (let d = new Date(START_DATE); d <= END_DATE; d.setDate(d.getDate()+1)) {
+    const dow = d.getDay();
+    SCHEDULE.filter(s => s.dow === dow).forEach(cfg => {
+      cfg.classes.forEach(cls => {
+        sessions.push({
+          date: fmtDate(d),
+          dow: dow,
+          dayName: DAY_NAMES[dow],
+          time: cfg.time,
+          timeLabel: cfg.timeLabel,
+          className: cls,
+          teacher: cfg.teacher,
+        });
+      });
+    });
+  }
+  return sessions;
+}
+
+const ALL_SESSIONS = generateAllSessions();
+
+// Generate 1-hour attendance sessions (separate from display schedule)
+function generateAttendanceSessions() {
+  const sessions = [];
+  for (let d = new Date(START_DATE); d <= END_DATE; d.setDate(d.getDate()+1)) {
+    const dow = d.getDay();
+    ATTENDANCE_SCHEDULE.filter(s => s.dow === dow).forEach(cfg => {
+      cfg.classes.forEach(cls => {
+        sessions.push({
+          date: fmtDate(d),
+          dow: dow,
+          dayName: DAY_NAMES[dow],
+          time: cfg.time,
+          timeLabel: cfg.timeLabel,
+          className: cls,
+          teacher: cfg.teacher,
+        });
+      });
+    });
+  }
+  return sessions;
+}
+
+const ALL_ATTENDANCE_SESSIONS = generateAttendanceSessions();
+
+// Get sessions for a specific month (attendance 1-hour sessions)
+function getSessionsByMonth(year, month) {
+  const prefix = `${year}-${String(month+1).padStart(2,'0')}`;
+  return ALL_ATTENDANCE_SESSIONS.filter(s => s.date.startsWith(prefix));
+}
+
+// ===================== Tab Navigation =====================
+function switchTab(name) {
+  if (!db) return; // Guard: wait for data to load
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('sec-' + name).classList.add('active');
+  if (name === 'attendance') { renderAttendanceTable(); }
+  if (name === 'enrollment') { renderEnrollmentTable(); }
+  if (name === 'roster') { renderRoster(); }
+}
+
+// ===================== Calendar =====================
+function renderCalendars() {
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const months = [
+    { y:2026, m:7 }, { y:2026, m:8 }, { y:2026, m:9 }, { y:2026, m:10 }, { y:2026, m:11 }
+  ];
+  months.forEach(({y,m}) => {
+    grid.appendChild(buildCalendar(y, m));
+  });
+}
+
+function buildCalendar(year, month) {
+  const wrap = document.createElement('div');
+  wrap.className = 'cal-month';
+
+  const header = document.createElement('div');
+  header.className = 'cal-month-header';
+  header.textContent = `${year}年 ${MONTH_NAMES[month]}`;
+  wrap.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'cal-body';
+
+  // Weekdays header (Mon-Sun)
+  const wdDiv = document.createElement('div');
+  wdDiv.className = 'cal-weekdays';
+  [1,2,3,4,5,6,0].forEach(dow => {
+    const wd = document.createElement('div');
+    wd.textContent = DAY_SHORT[dow];
+    if (dow === 5) wd.style.color = 'var(--accent)';
+    if (dow === 6) wd.style.color = 'var(--blue)';
+    if (dow === 0) wd.style.color = 'var(--purple)';
+    wdDiv.appendChild(wd);
+  });
+  body.appendChild(wdDiv);
+
+  // Days
+  const daysDiv = document.createElement('div');
+  daysDiv.className = 'cal-days';
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month+1, 0);
+  let startDow = firstDay.getDay(); // 0=Sun
+  // Convert to Mon=0 index
+  let startOffset = startDow === 0 ? 6 : startDow - 1;
+
+  // Empty cells before first day
+  for (let i=0; i<startOffset; i++) {
+    const e = document.createElement('div');
+    e.className = 'cal-day empty';
+    daysDiv.appendChild(e);
+  }
+
+  for (let day=1; day<=lastDay.getDate(); day++) {
+    const d = new Date(year, month, day);
+    const dow = d.getDay();
+    const dateStr = fmtDate(d);
+    const daySessions = SCHEDULE.filter(s => s.dow === dow);
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-day' + (daySessions.length ? ' has-class' : ' normal');
+
+    const num = document.createElement('div');
+    num.className = 'day-num';
+    num.textContent = day;
+    if (dow === 5) num.style.color = 'var(--accent)';
+    if (dow === 6) num.style.color = 'var(--blue)';
+    if (dow === 0) num.style.color = 'var(--purple)';
+    cell.appendChild(num);
+
+    if (daySessions.length) {
+      const clsDiv = document.createElement('div');
+      clsDiv.className = 'day-classes';
+      daySessions.forEach(s => {
+        s.classes.forEach(cls => {
+          const dot = document.createElement('div');
+          dot.className = 'cal-dot ' + CLASS_INFO[cls].dot;
+          clsDiv.appendChild(dot);
+        });
+      });
+      cell.appendChild(clsDiv);
+
+      // Add time labels
+      const timeLabel = document.createElement('div');
+      timeLabel.style.fontSize = '8px';
+      timeLabel.style.color = 'var(--text2)';
+      timeLabel.style.marginTop = '2px';
+      const times = [...new Set(daySessions.map(s => s.timeLabel))];
+      timeLabel.textContent = times.join('/');
+      cell.appendChild(timeLabel);
+    }
+
+    daysDiv.appendChild(cell);
+  }
+  body.appendChild(daysDiv);
+  wrap.appendChild(body);
+  return wrap;
+}
+
+// ===================== Attendance =====================
+function initMonthSelect() {
+  const sel = document.getElementById('monthSelect');
+  const months = [
+    { y:2026, m:7, label:'2026年8月' },
+    { y:2026, m:8, label:'2026年9月' },
+    { y:2026, m:9, label:'2026年10月' },
+    { y:2026, m:10, label:'2026年11月' },
+    { y:2026, m:11, label:'2026年12月' },
+  ];
+  const now = new Date();
+  sel.innerHTML = months.map(mo =>
+    `<option value="${mo.m}" ${mo.m === now.getMonth() ? 'selected' : ''}>${mo.label}</option>`
+  ).join('');
+}
+
+function renderAttendanceTable() {
+  if (!db) return; // Guard: wait for data to load
+  const monthVal = parseInt(document.getElementById('monthSelect').value);
+  const year = 2026;
+  const sessions = getSessionsByMonth(year, monthVal);
+
+  // Group by date
+  const byDate = {};
+  sessions.forEach(s => {
+    if (!byDate[s.date]) byDate[s.date] = [];
+    byDate[s.date].push(s);
+  });
+  const dates = Object.keys(byDate).sort();
+
+  // Stats
+  let totalSessions = sessions.length;
+  let recordedSessions = 0;
+  let totalAttended = 0;
+  sessions.forEach(s => {
+    const rec = getAttRecord(s.date, s.time, s.className);
+    if (rec.students.length > 0) { recordedSessions++; totalAttended += rec.students.length; }
+  });
+
+  const statsDiv = document.getElementById('attStats');
+  statsDiv.innerHTML = `
+    <div class="stat-box"><div class="label">本月课程(1小时)</div><div class="value" style="color:var(--accent)">${totalSessions}</div><div class="sub">节</div></div>
+    <div class="stat-box"><div class="label">已登记</div><div class="value" style="color:var(--green)">${recordedSessions}</div><div class="sub">节</div></div>
+    <div class="stat-box"><div class="label">未登记</div><div class="value" style="color:var(--orange)">${totalSessions - recordedSessions}</div><div class="sub">节</div></div>
+    <div class="stat-box"><div class="label">总出勤人次</div><div class="value" style="color:var(--blue)">${totalAttended}</div><div class="sub">人次</div></div>
+  `;
+
+  // Table
+  const table = document.getElementById('attTable');
+  let html = `<thead><tr>
+    <th>日期</th><th>星期</th><th>时间段</th><th>班级</th><th>代课师父</th><th>出勤/应到</th><th>操作</th>
+  </tr></thead><tbody>`;
+
+  dates.forEach(date => {
+    const daySessions = byDate[date];
+    const dow = daySessions[0].dow;
+    const dayClass = dow === 5 ? 'day-fri' : dow === 6 ? 'day-sat' : 'day-sun';
+    const dateParts = date.split('-');
+    const dateDisplay = `${parseInt(dateParts[1])}/${parseInt(dateParts[2])}`;
+    const isRotatingDay = [2,3,4,5].includes(dow);
+
+    if (isRotatingDay) {
+      // Rotating day (Tue-Fri): group by time slot, one row per time
+      const timeGroups = {};
+      const timeOrder = [];
+      daySessions.forEach(s => {
+        if (!timeGroups[s.time]) { timeGroups[s.time] = []; timeOrder.push(s.time); }
+        timeGroups[s.time].push(s);
+      });
+
+      timeOrder.forEach((time, idx) => {
+        const group = timeGroups[time];
+        let totalAttended = 0;
+        let totalStudents = 0;
+        let displayTeacher = '';
+        let hasRecord = false;
+
+        group.forEach(s => {
+          const rec = getAttRecord(s.date, s.time, s.className);
+          totalAttended += rec.students.length;
+          totalStudents += (db.students[s.className] || []).length;
+          if (!displayTeacher) displayTeacher = rec.teacher || s.teacher;
+          if (rec.students.length > 0 || rec.teacher) hasRecord = true;
+        });
+
+        const first = group[0];
+        const classBadges = group.map(s => {
+          const ci = CLASS_INFO[s.className];
+          return `<span class="badge-cls ${ci.badge}">${s.className}</span>`;
+        }).join(' ');
+
+        const modalCall = `showAttendanceModal('${first.date}','${time}','${first.className}','${esc(first.teacher)}',${first.dow},true)`;
+
+        html += `<tr>
+          ${idx === 0 ? `<td rowspan="${timeOrder.length}" class="${dayClass}">${dateDisplay}</td>
+          <td rowspan="${timeOrder.length}" class="${dayClass}">${first.dayName}</td>` : ''}
+          <td>${time}</td>
+          <td>${classBadges}</td>
+          <td>${displayTeacher}</td>
+          <td class="count-cell">${totalAttended}<span class="total"> / ${totalStudents}</span></td>
+          <td><button class="btn btn-sm ${hasRecord ? 'btn-outline' : 'btn-primary'}" onclick="${modalCall}">${hasRecord ? '修改' : '登记'}</button></td>
+        </tr>`;
+      });
+
+    } else {
+      // Non-rotating day (Sat/Sun): one row per class per time
+      daySessions.forEach((s, idx) => {
+        const rec = getAttRecord(s.date, s.time, s.className);
+        const attended = rec.students.length;
+        const total = (db.students[s.className] || []).length;
+        const ci = CLASS_INFO[s.className];
+        const displayTeacher = rec.teacher || s.teacher;
+        const hasRecord = attended > 0 || rec.teacher;
+
+        const modalCall = `showAttendanceModal('${s.date}','${s.time}','${s.className}','${esc(s.teacher)}',${s.dow},false)`;
+
+        html += `<tr>
+          ${idx === 0 ? `<td rowspan="${daySessions.length}" class="${dayClass}">${dateDisplay}</td>
+          <td rowspan="${daySessions.length}" class="${dayClass}">${s.dayName}</td>` : ''}
+          <td>${s.time}</td>
+          <td><span class="badge-cls ${ci.badge}">${s.className}</span></td>
+          <td>${displayTeacher}</td>
+          <td class="count-cell">${attended}<span class="total"> / ${total}</span></td>
+          <td><button class="btn btn-sm ${hasRecord ? 'btn-outline' : 'btn-primary'}" onclick="${modalCall}">${hasRecord ? '修改' : '登记'}</button></td>
+        </tr>`;
+      });
+    }
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+
+  // Summary
+  renderSummary(sessions);
+}
+
+function renderSummary(sessions) {
+  // Build summary: rows = time slots, columns = classes
+  // Sort time slots by start time
+  const timeSlots = [...new Set(sessions.map(s => s.time))].sort((a, b) => a.split('-')[0].localeCompare(b.split('-')[0]));
+  const classes = ['少林一班','少林二班','少林三四班'];
+
+  const table = document.getElementById('summaryTable');
+  let html = `<thead><tr>
+    <th>时间段</th>
+    <th>少林一班</th><th>少林二班</th><th>少林三四班</th>
+    <th>合计</th>
+  </tr></thead><tbody>`;
+
+  let grandTotal = 0;
+  const colTotals = { '少林一班':0, '少林二班':0, '少林三四班':0 };
+
+  timeSlots.forEach(ts => {
+    const tsSessions = sessions.filter(s => s.time === ts);
+    const dowSet = [...new Set(tsSessions.map(s => s.dow))];
+    const dowLabel = dowSet.map(d => DAY_NAMES[d]).join('、');
+    let rowTotal = 0;
+
+    html += `<tr><td style="font-weight:600">${ts}<br><span style="font-size:11px;color:var(--text2)">${dowLabel}</span></td>`;
+    classes.forEach(cls => {
+      const clsSessions = tsSessions.filter(s => s.className === cls);
+      if (clsSessions.length === 0) {
+        html += `<td style="color:#cbd5e1">—</td>`;
+      } else {
+        let total = 0;
+        clsSessions.forEach(s => {
+          const rec = getAttRecord(s.date, s.time, s.className);
+          total += rec.students.length;
+        });
+        rowTotal += total;
+        colTotals[cls] += total;
+        html += `<td>${total} <span style="font-size:11px;color:var(--text2)">(${clsSessions.length}次)</span></td>`;
+      }
+    });
+    html += `<td class="row-total">${rowTotal}</td></tr>`;
+    grandTotal += rowTotal;
+  });
+
+  // Totals row
+  html += `<tr><td class="grand-total">总计</td>`;
+  classes.forEach(cls => {
+    html += `<td class="grand-total">${colTotals[cls]}</td>`;
+  });
+  html += `<td class="grand-total">${grandTotal}</td></tr>`;
+
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+// ===================== Attendance Modal =====================
+function showAttendanceModal(date, time, className, teacher, dow, isCombined) {
+  const isRotatingDay = [2,3,4,5].includes(dow);
+  // On rotating days with isCombined, show all 3 classes' students
+  const classesToShow = (isCombined && isRotatingDay)
+    ? ['少林一班','少林二班','少林三四班']
+    : [className];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+
+  const dateParts = date.split('-');
+  const dateDisplay = `${dateParts[0]}年${parseInt(dateParts[1])}月${parseInt(dateParts[2])}日`;
+
+  // Build teacher section
+  let teacherSection = '';
+  if (isRotatingDay) {
+    const firstRec = getAttRecord(date, time, classesToShow[0]);
+    let defaultTeacher = firstRec.teacher || getLastRotatingTeacher(date, time) || ROTATING_TEACHERS[0];
+    teacherSection = `
+      <div style="margin-bottom:12px;padding:10px 12px;background:var(--accent-light);border-radius:8px">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px">🧑‍🏫 选择代课师父（轮课日）</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${ROTATING_TEACHERS.map(t => `
+            <label class="teacher-pick" style="flex:1;min-width:90px;display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 10px;border:2px solid ${defaultTeacher === t ? 'var(--accent)' : 'var(--border)'};border-radius:8px;background:#fff;font-size:13px">
+              <input type="radio" name="attTeacher" value="${t}" ${defaultTeacher === t ? 'checked' : ''} style="accent-color:var(--accent);width:16px;height:16px">
+              <span style="font-weight:${defaultTeacher === t ? '600' : '400'}">${t}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>`;
+  } else {
+    const rec = getAttRecord(date, time, className);
+    teacherSection = `<div style="margin-bottom:12px;font-size:14px;color:var(--text2)">🧑‍🏫 代课师父：<b style="color:var(--text)">${esc(rec.teacher || teacher || '未指定')}</b></div>`;
+  }
+
+  // Build student list - grouped by class for combined modal
+  let studentListHtml = '<div class="check-list">';
+  let totalStudents = 0;
+  let totalChecked = 0;
+
+  classesToShow.forEach(cls => {
+    const students = db.students[cls] || [];
+    const rec = getAttRecord(date, time, cls);
+    const attended = rec.students;
+    const ci = CLASS_INFO[cls];
+
+    if (classesToShow.length > 1) {
+      studentListHtml += `<div style="width:100%;padding:4px 8px;font-weight:600;font-size:13px;color:var(--c${(ci.color||'c1').replace('c','')};background:var(--c${(ci.color||'c1').replace('c','')}-bg);border-radius:6px;margin-top:4px">
+        <span class="badge-cls ${ci.badge}">${cls}</span> (${students.length}人)
+      </div>`;
+    }
+
+    students.forEach(st => {
+      const isChecked = attended.includes(st.name);
+      if (isChecked) totalChecked++;
+      totalStudents++;
+      studentListHtml += `
+        <div class="check-item ${isChecked ? 'checked' : ''}" onclick="toggleCheck(this)" data-class="${esc(cls)}">
+          <input type="checkbox" ${isChecked ? 'checked' : ''}>
+          <div>
+            <label>${st.name}</label>
+            ${st.phone ? `<div class="phone">${st.phone}</div>` : ''}
+          </div>
+        </div>`;
+    });
+  });
+  studentListHtml += '</div>';
+
+  const titleText = (isCombined && isRotatingDay) ? '全部班级（合堂）' : className;
+  const saveCall = (isCombined && isRotatingDay)
+    ? `saveAttendance('${date}','${time}','${className}',${dow},this,true)`
+    : `saveAttendance('${date}','${time}','${className}',${dow},this,false)`;
+
+  modal.innerHTML = `
+    <h3>📋 出勤登记 - ${titleText}</h3>
+    <div style="margin-bottom:12px;font-size:14px;color:var(--text2)">
+      📅 ${dateDisplay} &nbsp;|&nbsp; ⏰ ${time}${(isCombined && isRotatingDay) ? ' &nbsp;|&nbsp; 🎓 全部班级（合堂轮课）' : ' &nbsp;|&nbsp; 🎓 ' + className}
+    </div>
+    ${teacherSection}
+    <div style="margin-bottom:8px;font-size:13px">
+      已选 <span id="checkCount" style="font-weight:700;color:var(--accent)">${totalChecked}</span> / ${totalStudents} 人
+      <button class="btn btn-sm btn-outline" style="margin-left:12px" onclick="selectAll(this)">全选</button>
+      <button class="btn btn-sm btn-outline" onclick="selectNone(this)">清空</button>
+    </div>
+    ${studentListHtml}
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
+      <button class="btn btn-primary" onclick="${saveCall}">保存</button>
+    </div>
+  `;
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // Teacher radio visual feedback
+  if (isRotatingDay) {
+    modal.querySelectorAll('input[name="attTeacher"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        modal.querySelectorAll('.teacher-pick').forEach(label => {
+          const input = label.querySelector('input');
+          const active = input.checked;
+          label.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+          label.style.boxShadow = active ? '0 0 0 3px rgba(185,28,28,.15)' : 'none';
+          const span = label.querySelector('span');
+          if (span) span.style.fontWeight = active ? '600' : '400';
+        });
+      });
+      if (radio.checked) {
+        const label = radio.closest('.teacher-pick');
+        if (label) {
+          label.style.borderColor = 'var(--accent)';
+          label.style.boxShadow = '0 0 0 3px rgba(185,28,28,.15)';
+        }
+      }
+    });
+  }
+}
+
+function toggleCheck(item) {
+  const cb = item.querySelector('input');
+  cb.checked = !cb.checked;
+  item.classList.toggle('checked', cb.checked);
+  updateCheckCount();
+}
+
+function updateCheckCount() {
+  const checked = document.querySelectorAll('.check-list input:checked').length;
+  const el = document.getElementById('checkCount');
+  if (el) el.textContent = checked;
+}
+
+function selectAll(btn) {
+  document.querySelectorAll('.check-list input').forEach(cb => {
+    cb.checked = true;
+    cb.closest('.check-item').classList.add('checked');
+  });
+  updateCheckCount();
+}
+
+function selectNone(btn) {
+  document.querySelectorAll('.check-list input').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.check-item').classList.remove('checked');
+  });
+  updateCheckCount();
+}
+
+function saveAttendance(date, time, className, dow, btn, isCombined) {
+  const isRotatingDay = [2,3,4,5].includes(dow);
+
+  // Get chosen teacher (rotating days only)
+  let chosenTeacher = '';
+  const teacherRadio = document.querySelector('input[name="attTeacher"]:checked');
+  if (teacherRadio) chosenTeacher = teacherRadio.value;
+
+  if (isCombined && isRotatingDay) {
+    // Combined modal: split checked students by class using data-class attribute
+    const classChecked = {};
+    ['少林一班','少林二班','少林三四班'].forEach(cls => { classChecked[cls] = []; });
+
+    document.querySelectorAll('.check-list .check-item').forEach(item => {
+      const cb = item.querySelector('input[type="checkbox"]');
+      if (cb && cb.checked) {
+        const cls = item.dataset.class;
+        const label = item.querySelector('label');
+        if (cls && label && classChecked[cls]) {
+          classChecked[cls].push(label.textContent.trim());
+        }
+      }
+    });
+
+    let totalChecked = 0;
+    // Save per-class attendance
+    ['少林一班','少林二班','少林三四班'].forEach(cls => {
+      const checked = classChecked[cls];
+      totalChecked += checked.length;
+      const key = attKey(date, time, cls);
+      // Only save if there are checked students OR an existing record
+      if (checked.length > 0 || db.attendance[key]) {
+        db.attendance[key] = { teacher: chosenTeacher, students: checked };
+      }
+    });
+
+    saveData();
+    (async () => {
+      if (!_supabase) return;
+      try {
+        const rows = ['少林一班','少林二班','少林三四班'].filter(c => classChecked[c].length > 0 || db.attendance[attKey(date, time, c)]).map(c => ({ date, time, class_name:c, teacher:chosenTeacher, student_names:classChecked[c]||[] }));
+        if (rows.length > 0) {
+          const { error } = await _supabase.from('attendance_records').upsert(rows, { onConflict: 'date,time,class_name' });
+          if (error) { console.error(error); toast('出勤同步失败：' + error.message); }
+        }
+      } catch(e) { console.error(e); }
+    })();
+    btn.closest('.modal-overlay').remove();
+    renderAttendanceTable();
+    toast(chosenTeacher
+      ? `已保存！${chosenTeacher} 代课，共出勤 ${totalChecked} 人`
+      : `已保存！共出勤 ${totalChecked} 人`);
+
+  } else {
+    // Non-combined: single class modal
+    const checked = [];
+    document.querySelectorAll('.check-list input:checked').forEach(cb => {
+      const label = cb.parentElement.querySelector('label');
+      if (label) checked.push(label.textContent.trim());
+    });
+
+    const key = attKey(date, time, className);
+    db.attendance[key] = { teacher: chosenTeacher, students: checked };
+
+    // On rotating days, sync teacher to other classes' existing records
+    if (isRotatingDay && chosenTeacher) {
+      ['少林一班','少林二班','少林三四班'].forEach(cls => {
+        if (cls === className) return;
+        const k = attKey(date, time, cls);
+        const r = db.attendance[k];
+        if (r) {
+          if (Array.isArray(r)) {
+            db.attendance[k] = { teacher: chosenTeacher, students: r };
+          } else {
+            db.attendance[k].teacher = chosenTeacher;
+          }
+        }
+      });
+    }
+
+    saveData();
+    (async () => {
+      if (!_supabase) return;
+      try {
+        const rows = [{ date, time, class_name:className, teacher:chosenTeacher, student_names:checked }];
+        if (isRotatingDay && chosenTeacher) {
+          ['少林一班','少林二班','少林三四班'].forEach(c => {
+            if (c === className) return;
+            const k = attKey(date, time, c);
+            const r = db.attendance[k];
+            if (r && r.students) rows.push({ date, time, class_name:c, teacher:chosenTeacher, student_names:r.students });
+          });
+        }
+        const { error } = await _supabase.from('attendance_records').upsert(rows, { onConflict: 'date,time,class_name' });
+        if (error) { console.error(error); toast('出勤同步失败：' + error.message); }
+      } catch(e) { console.error(e); }
+    })();
+    btn.closest('.modal-overlay').remove();
+    renderAttendanceTable();
+    toast(chosenTeacher
+      ? `已保存！${chosenTeacher} 代课，${className} 出勤 ${checked.length} 人`
+      : `已保存！${className} 出勤 ${checked.length} 人`);
+  }
+}
+
+// ===================== Roster =====================
+function renderRoster() {
+  const grid = document.getElementById('rosterGrid');
+  grid.innerHTML = '';
+  const classColors = { '少林一班':'var(--c1)', '少林二班':'var(--c2)', '少林三四班':'var(--c3)' };
+
+  Object.keys(db.students).forEach(cls => {
+    const card = document.createElement('div');
+    card.className = 'roster-card';
+    const header = document.createElement('div');
+    header.className = 'roster-card-header';
+    header.style.background = classColors[cls];
+    header.textContent = `${cls} (${db.students[cls].length}人)`;
+    card.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'roster-card-body';
+
+    db.students[cls].forEach((st, idx) => {
+      const age = calcAge(st.birthYear);
+      const row = document.createElement('div');
+      row.className = 'student-row';
+      row.dataset.cls = cls;
+      row.dataset.idx = idx;
+
+      // View
+      const view = document.createElement('div');
+      view.className = 'view';
+      const mainSpan = document.createElement('span');
+      mainSpan.textContent = `${idx+1}. ${st.name || '（未命名）'}`;
+      view.appendChild(mainSpan);
+      if (st.phone) {
+        const phoneSpan = document.createElement('span');
+        phoneSpan.style.cssText = 'color:var(--text2);font-size:11px';
+        phoneSpan.textContent = st.phone;
+        view.appendChild(phoneSpan);
+      }
+      const meta = document.createElement('span');
+      meta.className = 'student-meta';
+      if (st.gender) {
+        const tag = document.createElement('span');
+        tag.className = 'tag gender-' + (st.gender === '女' ? 'f' : 'm');
+        tag.textContent = st.gender;
+        meta.appendChild(tag);
+      }
+      if (st.birthYear) {
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = st.birthYear + '年';
+        meta.appendChild(tag);
+      }
+      if (age !== null) {
+        const tag = document.createElement('span');
+        tag.className = 'tag age';
+        tag.textContent = age + '岁';
+        meta.appendChild(tag);
+      }
+      if (st.note) {
+        const noteSpan = document.createElement('span');
+        noteSpan.style.cssText = 'color:var(--accent);font-size:11px;font-weight:600';
+        noteSpan.textContent = '[' + st.note + ']';
+        meta.appendChild(noteSpan);
+      }
+      if (meta.children.length) view.appendChild(meta);
+
+      // Actions
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit-btn';
+      editBtn.title = '编辑';
+      editBtn.textContent = '✎';
+      editBtn.onclick = function() { editStudent(this); };
+      const delBtn = document.createElement('button');
+      delBtn.className = 'del-btn';
+      delBtn.title = '删除';
+      delBtn.textContent = '✕';
+      delBtn.onclick = function() { removeStudent(this); };
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+
+      // Edit form
+      const form = document.createElement('div');
+      form.className = 'edit-form';
+      const nameInput = mkInput('text', 'name', st.name || '', '姓名');
+      const phoneInput = mkInput('text', 'phone', st.phone || '', '电话');
+      const genderSel = mkSelect('gender', [['','性别'],['男','男'],['女','女']], st.gender || '');
+      genderSel.name = 'gender';
+      const yearInput = mkInput('number', 'birthYear', st.birthYear || '', '出生年份');
+      yearInput.min = '2000'; yearInput.max = '2026';
+      const noteInput = mkInput('text', 'note', st.note || '', '备注');
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'btn btn-sm btn-primary';
+      saveBtn.textContent = '保存';
+      saveBtn.onclick = function() { saveStudentEdit(this); };
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn btn-sm btn-outline';
+      cancelBtn.textContent = '取消';
+      cancelBtn.onclick = function() { cancelStudentEdit(this); };
+      form.append(nameInput, phoneInput, genderSel, yearInput, noteInput, saveBtn, cancelBtn);
+
+      row.appendChild(view);
+      row.appendChild(actions);
+      row.appendChild(form);
+      body.appendChild(row);
+    });
+
+    const addRow = document.createElement('div');
+    addRow.className = 'add-row';
+    addRow.appendChild(mkInput('text', '', '', '姓名', 'add_name_' + cls));
+    addRow.lastChild.style.minWidth = '80px';
+    addRow.appendChild(mkInput('text', '', '', '电话', 'add_phone_' + cls));
+    addRow.lastChild.style.minWidth = '70px';
+    addRow.appendChild(mkSelect('add_gender_' + cls, [['','性别'],['男','男'],['女','女']], ''));
+    const addYear = mkInput('number', '', '', '出生年份', 'add_year_' + cls);
+    addYear.style.minWidth = '75px';
+    addRow.appendChild(addYear);
+    const addNote = mkInput('text', '', '', '备注', 'add_note_' + cls);
+    addNote.style.minWidth = '60px';
+    addRow.appendChild(addNote);
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn btn-sm btn-primary';
+    addBtn.textContent = '+ 添加';
+    addBtn.onclick = function() { addStudent(cls); };
+    addRow.appendChild(addBtn);
+    body.appendChild(addRow);
+
+    card.appendChild(body);
+    grid.appendChild(card);
+  });
+}
+
+function mkInput(type, name, value, placeholder, id) {
+  const el = document.createElement('input');
+  el.type = type;
+  if (name) el.name = name;
+  if (value !== undefined && value !== null) el.value = value;
+  if (placeholder) el.placeholder = placeholder;
+  if (id) el.id = id;
+  return el;
+}
+function mkSelect(id, options, value) {
+  const el = document.createElement('select');
+  el.id = id;
+  options.forEach(([v, label]) => {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = label;
+    if (v === value) opt.selected = true;
+    el.appendChild(opt);
+  });
+  return el;
+}
+
+function showAddStudentModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  const classes = Object.keys(db.students);
+  const options = classes.map(cls => `<option value="${cls}">${cls}</option>`).join('');
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <h3>＋ 添加学员</h3>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:13px;color:var(--text2);margin-bottom:4px;display:block">选择班级</label>
+        <select id="modal_add_cls" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">${options}</select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label style="font-size:13px;color:var(--text2);margin-bottom:4px;display:block">姓名 *</label>
+          <input type="text" id="modal_add_name" placeholder="学员姓名" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
+        </div>
+        <div>
+          <label style="font-size:13px;color:var(--text2);margin-bottom:4px;display:block">电话</label>
+          <input type="text" id="modal_add_phone" placeholder="联系电话" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div>
+          <label style="font-size:13px;color:var(--text2);margin-bottom:4px;display:block">性别</label>
+          <select id="modal_add_gender" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
+            <option value="">请选择</option>
+            <option value="男">男</option>
+            <option value="女">女</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:13px;color:var(--text2);margin-bottom:4px;display:block">出生年份</label>
+          <input type="number" id="modal_add_year" placeholder="如 2015" min="1990" max="2026" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
+        </div>
+        <div>
+          <label style="font-size:13px;color:var(--text2);margin-bottom:4px;display:block">备注</label>
+          <input type="text" id="modal_add_note" placeholder="如：弟子班" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
+      <button class="btn btn-primary" onclick="saveNewStudent(this)">添加</button>
+    </div>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  setTimeout(() => modal.querySelector('#modal_add_name').focus(), 100);
+}
+
+function saveNewStudent(btn) {
+  const overlay = btn.closest('.modal-overlay');
+  const cls = overlay.querySelector('#modal_add_cls').value;
+  const name = overlay.querySelector('#modal_add_name').value.trim();
+  const phone = overlay.querySelector('#modal_add_phone').value.trim();
+  const gender = overlay.querySelector('#modal_add_gender').value;
+  const yearVal = overlay.querySelector('#modal_add_year').value.trim();
+  const birthYear = yearVal ? parseInt(yearVal) : '';
+  const note = overlay.querySelector('#modal_add_note').value.trim();
+
+  if (!name) { toast('请输入学员姓名'); return; }
+
+  db.students[cls].push({ name, phone, gender, birthYear, note });
+  saveData();
+  (async () => {
+    if (!_supabase) return;
+    const { error } = await _supabase.from('students').insert({ class_name:cls, name, phone:phone||null, gender:gender||'男', birth_year:birthYear||null, note:note||null });
+    if (error) { console.error(error); toast('添加失败：' + error.message); }
+  })();
+  renderRoster();
+  overlay.remove();
+  toast(`已添加 ${name} 到 ${cls}`);
+}
+
+function addStudent(cls) {
+  const nameEl = document.getElementById('add_name_' + cls);
+  const phoneEl = document.getElementById('add_phone_' + cls);
+  const genderEl = document.getElementById('add_gender_' + cls);
+  const yearEl = document.getElementById('add_year_' + cls);
+  const noteEl = document.getElementById('add_note_' + cls);
+  const name = nameEl.value.trim();
+  const phone = phoneEl.value.trim();
+  const gender = genderEl.value;
+  const birthYear = yearEl.value ? parseInt(yearEl.value) : '';
+  const note = noteEl.value.trim();
+  if (!name) { toast('请输入学员姓名'); return; }
+  db.students[cls].push({ name, phone, gender, birthYear, note });
+  saveData();
+  (async () => {
+    if (!_supabase) return;
+    const { error } = await _supabase.from('students').insert({ class_name:cls, name, phone:phone||null, gender:gender||'男', birth_year:birthYear||null, note:note||null });
+    if (error) { console.error(error); toast('添加失败：' + error.message); }
+  })();
+  nameEl.value = '';
+  phoneEl.value = '';
+  genderEl.value = '';
+  yearEl.value = '';
+  noteEl.value = '';
+  renderRoster();
+  toast(`已添加 ${name} 到 ${cls}`);
+}
+
+function calcAge(birthYear) {
+  if (!birthYear) return null;
+  const y = parseInt(birthYear);
+  if (isNaN(y)) return null;
+  return new Date().getFullYear() - y;
+}
+
+function removeStudent(btn) {
+  const row = btn.closest('.student-row');
+  const cls = row.dataset.cls;
+  const idx = parseInt(row.dataset.idx, 10);
+
+  if (btn.classList.contains('confirming')) {
+    const name = db.students[cls][idx].name;
+    db.students[cls].splice(idx, 1);
+    // Also remove their attendance records
+    Object.keys(db.attendance).forEach(key => {
+      const rec = db.attendance[key];
+      if (Array.isArray(rec)) {
+        db.attendance[key] = rec.filter(n => n !== name);
+        if (db.attendance[key].length === 0) delete db.attendance[key];
+      } else if (rec && Array.isArray(rec.students)) {
+        rec.students = rec.students.filter(n => n !== name);
+        if (rec.students.length === 0 && !rec.teacher) delete db.attendance[key];
+      }
+    });
+    // Remove enrollment record
+    delete db.enrollment[enrollKey(cls, name)];
+    saveData();
+    (async () => {
+      if (!_supabase) return;
+      try {
+        await _supabase.from('students').delete().eq('class_name', cls).eq('name', name);
+        await _supabase.from('enrollment').delete().eq('class_name', cls).eq('student_name', name);
+      } catch(e) { console.error(e); toast('删除失败：' + e.message); }
+    })();
+    renderRoster();
+    toast('已删除 ' + name);
+    return;
+  }
+
+  // First click: show inline confirmation
+  btn.classList.add('confirming');
+  btn.textContent = '确认？';
+  btn.title = '再次点击确认删除';
+  setTimeout(() => {
+    if (btn && btn.parentNode) {
+      btn.classList.remove('confirming');
+      btn.textContent = '✕';
+      btn.title = '删除';
+    }
+  }, 3000);
+}
+
+function editStudent(btn) {
+  const row = btn.closest('.student-row');
+  row.classList.add('editing');
+  row.querySelector('.edit-form input[name="name"]').focus();
+}
+
+function saveStudentEdit(btn) {
+  const row = btn.closest('.student-row');
+  const cls = row.dataset.cls;
+  const idx = parseInt(row.dataset.idx, 10);
+  const oldName = db.students[cls][idx].name;
+  const name = row.querySelector('.edit-form input[name="name"]').value.trim();
+  const phone = row.querySelector('.edit-form input[name="phone"]').value.trim();
+  const gender = row.querySelector('.edit-form select[name="gender"]').value;
+  const yearVal = row.querySelector('.edit-form input[name="birthYear"]').value.trim();
+  const birthYear = yearVal ? parseInt(yearVal) : '';
+  const note = row.querySelector('.edit-form input[name="note"]').value.trim();
+  if (!name) { toast('姓名不能为空'); return; }
+
+  db.students[cls][idx] = { name, phone, gender, birthYear, note };
+
+  // Sync attendance and enrollment records if name changed
+  if (oldName !== name) {
+    Object.keys(db.attendance).forEach(key => {
+      const rec = db.attendance[key];
+      if (Array.isArray(rec)) {
+        if (rec.includes(oldName)) {
+          db.attendance[key] = rec.map(n => n === oldName ? name : n);
+        }
+      } else if (rec && Array.isArray(rec.students)) {
+        if (rec.students.includes(oldName)) {
+          rec.students = rec.students.map(n => n === oldName ? name : n);
+        }
+      }
+    });
+    const oldKey = enrollKey(cls, oldName);
+    const newKey = enrollKey(cls, name);
+    if (db.enrollment[oldKey]) {
+      db.enrollment[newKey] = db.enrollment[oldKey];
+      delete db.enrollment[oldKey];
+    }
+  }
+
+  saveData();
+  (async () => {
+    if (!_supabase) return;
+    try {
+      const { error: e1 } = await _supabase.from('students').update({ name, phone:phone||null, gender, birth_year:birthYear||null, note:note||null }).eq('class_name', cls).eq('name', oldName);
+      if (e1) console.error('[Supabase] student update:', e1.message);
+      if (oldName !== name) {
+        await _supabase.from('enrollment').update({ student_name: name }).eq('class_name', cls).eq('student_name', oldName);
+        const { data: attRecs } = await _supabase.from('attendance_records').select('id, student_names').eq('class_name', cls);
+        if (attRecs) {
+          for (const r of attRecs) {
+            if (r.student_names && r.student_names.includes(oldName)) {
+              await _supabase.from('attendance_records').update({ student_names: r.student_names.map(n => n === oldName ? name : n) }).eq('id', r.id);
+            }
+          }
+        }
+      }
+    } catch(e) { console.error(e); toast('保存失败：' + e.message); }
+  })();
+  renderRoster();
+  toast(`已保存 ${name} 的信息`);
+}
+
+function cancelStudentEdit(btn) {
+  const row = btn.closest('.student-row');
+  row.classList.remove('editing');
+}
+
+// ===================== Enrollment =====================
+function enrollKey(cls, name) { return cls + '|' + name; }
+
+function getEnrollment(cls, name) {
+  const key = enrollKey(cls, name);
+  // Auto-detect disciple class from student note
+  let autoDisciple = false;
+  if (db.students && db.students[cls]) {
+    const st = db.students[cls].find(s => s.name === name);
+    if (st && st.note && st.note.indexOf('弟子班') >= 0) autoDisciple = true;
+  }
+  if (!db.enrollment[key]) {
+    db.enrollment[key] = { totalHours: 0, validDays: 0, startDate: '', endDate: '', beforeJune: 0, isDisciple: autoDisciple };
+  }
+  if (db.enrollment[key].isDisciple === undefined) db.enrollment[key].isDisciple = autoDisciple;
+  // Auto-upgrade to disciple if student note says so but enrollment hasn't been set
+  if (autoDisciple && !db.enrollment[key].isDisciple) db.enrollment[key].isDisciple = true;
+  return db.enrollment[key];
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const end = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+  return diff;
+}
+
+function calcConsumption(cls, name) {
+  const monthly = { '6':0, '7':0, '8':0, '9':0, '10':0, '11':0, '12':0 };
+  let fromAttendance = 0;
+  Object.keys(db.attendance).forEach(key => {
+    const parts = key.split('|');
+    if (parts.length !== 3) return;
+    const [date, time, className] = parts;
+    if (className !== cls) return;
+    const rec = getAttRecord(date, time, className);
+    if (!rec.students.includes(name)) return;
+    const m = parseInt(date.split('-')[1], 10);
+    if (monthly[m] !== undefined) {
+      monthly[m]++;
+      fromAttendance++;
+    }
+  });
+  const enroll = getEnrollment(cls, name);
+  const total = (parseInt(enroll.beforeJune) || 0) + fromAttendance;
+  return { monthly, total, fromAttendance };
+}
+
+function renderEnrollmentTable() {
+  const table = document.getElementById('enrollmentTable');
+  const months = ['6','7','8','9','10','11','12'];
+  let html = `<thead><tr>
+    <th>班级</th><th>姓名</th><th>总课时</th><th>有效期天数</th><th>生效日期</th><th>到期日期</th>
+    <th>距离到期天数</th><th>总消课数</th>
+    <th>6月</th><th>7月</th><th>8月</th><th>9月</th><th>10月</th><th>11月</th><th>12月</th>
+    <th>当前剩余</th><th>操作</th>
+  </tr></thead><tbody>`;
+
+  Object.keys(db.students).forEach(cls => {
+    const ci = CLASS_INFO[cls] || {};
+    const colorNum = (ci.color || '').replace('c','');
+    db.students[cls].forEach(st => {
+      const enroll = getEnrollment(cls, st.name);
+      const cons = calcConsumption(cls, st.name);
+      const days = daysUntil(enroll.endDate);
+      const remaining = (parseInt(enroll.totalHours) || 0) - cons.total;
+
+      let daysClass = '';
+      let daysText = '<span class="empty">-</span>';
+      if (days !== null) {
+        if (days < 0) { daysClass = 'expired'; daysText = `超期 ${Math.abs(days)} 天`; }
+        else if (days <= 7) { daysClass = 'near-expire'; daysText = `${days} 天`; }
+        else { daysText = `${days} 天`; }
+      }
+
+      const isDisciple = enroll.isDisciple;
+      const remainingClass = isDisciple ? '' : (remaining < 0 ? 'negative' : (remaining <= 5 ? 'near-expire' : 'positive'));
+      const clsBadge = `<span class="badge-cls bc-${colorNum}">${cls}</span>`;
+      const discipleBadge = isDisciple ? `<span class="badge-disciple" title="弟子班，有效期一年，按实际出勤统计">弟子班</span>` : '';
+
+      html += `<tr>
+        <td class="class-col">${clsBadge}</td>
+        <td class="name-col">${esc(st.name)}${discipleBadge}</td>
+        <td class="num">${isDisciple ? '<span class="disciple-note">不限课时</span>' : (enroll.totalHours || '-')}</td>
+        <td class="num">${enroll.validDays || '-'}</td>
+        <td>${enroll.startDate || '<span class="empty">-</span>'}</td>
+        <td>${enroll.endDate || '<span class="empty">-</span>'}</td>
+        <td class="${daysClass}">${daysText}</td>
+        <td class="num">${cons.total}</td>
+        
+        ${months.map(m => `<td class="num">${cons.monthly[m] || 0}</td>`).join('')}
+        <td class="${remainingClass} num">${isDisciple ? '—' : remaining}</td>
+        <td>
+          <button class="btn btn-sm btn-outline" onclick="editEnrollment('${esc(cls)}','${esc(st.name)}')">编辑</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteEnrollmentRow('${esc(cls)}','${esc(st.name)}',this)" title="删除该学员及其报课、出勤记录">删除</button>
+        </td>
+      </tr>`;
+    });
+  });
+
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function editEnrollment(cls, name) {
+  const enroll = getEnrollment(cls, name);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.maxWidth = '420px';
+  modal.innerHTML = `
+    <h3>✏️ 编辑报课信息</h3>
+    <div style="margin-bottom:16px;font-size:14px;color:var(--text2)">${esc(cls)} · ${esc(name)}</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <label style="font-size:13px;color:var(--text2)">总课时 <input type="number" id="enroll_total" value="${enroll.totalHours || ''}" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
+      <label style="font-size:13px;color:var(--text2)">有效期天数 <input type="number" id="enroll_days" value="${enroll.validDays || ''}" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
+      <label style="font-size:13px;color:var(--text2)">生效日期 <input type="date" id="enroll_start" value="${enroll.startDate || ''}" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
+      <label style="font-size:13px;color:var(--text2)">到期日期（自动计算） <input type="date" id="enroll_end" value="${enroll.endDate || ''}" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;background:#f8fafc"></label>
+      <label style="font-size:13px;color:var(--text2)">6月之前累计消课 <input type="number" id="enroll_before" value="${enroll.beforeJune || ''}" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
+      <label style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px">
+        <input type="checkbox" id="enroll_disciple" ${enroll.isDisciple ? 'checked' : ''} style="width:18px;height:18px">
+        <span>弟子班（不限课时，只计算有效期和实际出勤）</span>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
+      <button class="btn btn-primary" onclick="saveEnrollment('${esc(cls)}','${esc(name)}',this)">保存</button>
+    </div>
+  `;
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // Auto-calculate end date when start date or valid days change
+  const startInput = document.getElementById('enroll_start');
+  const daysInput = document.getElementById('enroll_days');
+  const endInput = document.getElementById('enroll_end');
+  function autoCalcEnd() {
+    const sv = startInput.value;
+    const dv = parseInt(daysInput.value);
+    if (sv && dv > 0) {
+      const start = new Date(sv);
+      start.setDate(start.getDate() + dv);
+      endInput.value = start.toISOString().split('T')[0];
+    }
+  }
+  startInput.addEventListener('change', autoCalcEnd);
+  daysInput.addEventListener('input', autoCalcEnd);
+}
+
+function saveEnrollment(cls, name, btn) {
+  const key = enrollKey(cls, name);
+  db.enrollment[key] = {
+    totalHours: parseInt(document.getElementById('enroll_total').value) || 0,
+    validDays: parseInt(document.getElementById('enroll_days').value) || 0,
+    startDate: document.getElementById('enroll_start').value,
+    endDate: document.getElementById('enroll_end').value,
+    beforeJune: parseInt(document.getElementById('enroll_before').value) || 0,
+    isDisciple: document.getElementById('enroll_disciple').checked,
+  };
+  saveData();
+  (async () => {
+    if (!_supabase) return;
+    try {
+      const enr = db.enrollment[key];
+      const { error } = await _supabase.from('enrollment').upsert({ class_name:cls, student_name:name, total_hours:enr.totalHours||0, valid_days:enr.validDays||0, start_date:enr.startDate||null, end_date:enr.endDate||null, before_june:enr.beforeJune||0, is_disciple:enr.isDisciple||false }, { onConflict: 'class_name,student_name' });
+      if (error) { console.error(error); toast('报课同步失败：' + error.message); }
+    } catch(e) { console.error(e); }
+  })();
+  btn.closest('.modal-overlay').remove();
+  renderEnrollmentTable();
+  toast(`已保存 ${name} 的报课信息`);
+}
+
+function deleteEnrollmentRow(cls, name, btn) {
+  if (btn.classList.contains('confirming')) {
+    const list = db.students[cls] || [];
+    const idx = list.findIndex(s => s.name === name);
+    if (idx >= 0) list.splice(idx, 1);
+    // Remove enrollment record
+    delete db.enrollment[enrollKey(cls, name)];
+    // Clean up attendance records
+    Object.keys(db.attendance).forEach(key => {
+      const rec = db.attendance[key];
+      if (Array.isArray(rec)) {
+        db.attendance[key] = rec.filter(n => n !== name);
+        if (db.attendance[key].length === 0) delete db.attendance[key];
+      } else if (rec && Array.isArray(rec.students)) {
+        rec.students = rec.students.filter(n => n !== name);
+        if (rec.students.length === 0 && !rec.teacher) delete db.attendance[key];
+      }
+    });
+    saveData();
+    (async () => {
+      if (!_supabase) return;
+      try {
+        await _supabase.from('students').delete().eq('class_name', cls).eq('name', name);
+        await _supabase.from('enrollment').delete().eq('class_name', cls).eq('student_name', name);
+      } catch(e) { console.error(e); toast('删除同步失败：' + e.message); }
+    })();
+    renderEnrollmentTable();
+    toast('已删除 ' + name);
+    return;
+  }
+  // First click: show inline confirmation
+  btn.classList.add('confirming');
+  btn.textContent = '确认？';
+  btn.title = '再次点击确认删除';
+  setTimeout(() => {
+    if (btn.parentNode) {
+      btn.classList.remove('confirming');
+      btn.textContent = '删除';
+      btn.title = '删除该学员及其报课、出勤记录';
+    }
+  }, 3000);
+}
+
+function exportEnrollment() {
+  const months = ['6','7','8','9','10','11','12'];
+  let csv = '\uFEFF菲律宾少林文化中心 - 学员报课信息统计\n';
+  csv += '班级,姓名,总课时,有效期天数,生效日期,到期日期,距离到期天数,总消课数,6月前累计,6月消课,7月消课,8月消课,9月消课,10月消课,11月消课,12月消课,当前剩余\n';
+
+  Object.keys(db.students).forEach(cls => {
+    db.students[cls].forEach(st => {
+      const enroll = getEnrollment(cls, st.name);
+      const cons = calcConsumption(cls, st.name);
+      const days = daysUntil(enroll.endDate);
+      const isDisciple = enroll.isDisciple;
+      const remaining = isDisciple ? '' : ((parseInt(enroll.totalHours) || 0) - cons.total);
+      csv += `${cls},${st.name},${isDisciple ? '弟子班' : enroll.totalHours},${enroll.validDays},${enroll.startDate},${enroll.endDate},${days === null ? '' : days},${cons.total},${isDisciple ? '' : (enroll.beforeJune || 0)},`;
+      csv += months.map(m => cons.monthly[m] || 0).join(',');
+      csv += `,${remaining}\n`;
+    });
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `少林学员报课信息统计.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('已导出报课统计CSV');
+}
+
+// ===================== Export =====================
+function exportAttendance() {
+  const monthVal = parseInt(document.getElementById('monthSelect').value);
+  const year = 2026;
+  const sessions = getSessionsByMonth(year, monthVal);
+  const monthLabel = `${year}年${monthVal+1}月`;
+
+  let csv = '\uFEFF菲律宾少林文化中心 - 功夫课出勤统计\n';
+  csv += `${monthLabel}\n\n`;
+  csv += '日期,星期,时间段,班级,代课师父,出勤人数,应到人数\n';
+
+  sessions.forEach(s => {
+    const rec = getAttRecord(s.date, s.time, s.className);
+    const attended = rec.students.length;
+    const total = (db.students[s.className] || []).length;
+    const teacher = rec.teacher || s.teacher;
+    csv += `${s.date},${s.dayName},${s.time},${s.className},${teacher},${attended},${total}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `少林功夫课出勤统计_${monthLabel}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('已导出CSV文件');
+}
+
+// ===================== Init =====================
+function updateStats() {
+  const weeklySessions = SCHEDULE.reduce((sum, s) => sum + s.classes.length, 0);
+  const attDaysPerWeek = 6; // Tue-Sun
+  const weeklyHours = ATTENDANCE_SCHEDULE.length; // total 1-hour slots per week
+  const totalDays = Math.ceil((END_DATE - START_DATE) / (1000 * 60 * 60 * 24)) + 1;
+  const totalWeeks = Math.round(totalDays / 7 * 10) / 10;
+  const totalSessions = ALL_ATTENDANCE_SESSIONS.length;
+
+  document.getElementById('statWeeks').textContent = totalWeeks + '周';
+  document.getElementById('statTotal').textContent = '~' + totalSessions + '节';
+  document.getElementById('statWeekly').textContent = '每周' + weeklySessions + '节 · 合' + weeklyHours + '课时';
+}
+
+// ===== Data Export / Import (cross-device sync) =====
+function exportAllData() {
+  const exportObj = {
+    _type: 'shaolin_schedule_data',
+    _version: SOURCE_VERSION,
+    _exportDate: new Date().toISOString(),
+    _migrated1hour: db._migrated1hour || false,
+    students: db.students,
+    attendance: db.attendance,
+    enrollment: db.enrollment,
+  };
+  const json = JSON.stringify(exportObj, null, 2);
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `少林课表数据_${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('数据已导出，请将文件发送到其他设备');
+}
+
+function importAllData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data._type !== 'shaolin_schedule_data') {
+        toast('文件格式不正确');
+        return;
+      }
+      if (!data.students || !data.attendance || !data.enrollment) {
+        toast('数据不完整');
+        return;
+      }
+      if (!confirm('导入数据将覆盖当前设备上的所有数据，确定继续吗？')) {
+        event.target.value = '';
+        return;
+      }
+      db.students = data.students;
+      db.attendance = data.attendance;
+      db.enrollment = data.enrollment;
+      db.sourceVersion = SOURCE_VERSION;
+      db._migrated1hour = data._migrated1hour || false;
+      saveData();
+      (async () => {
+        if (!_supabase) return;
+        try {
+          await syncAllToSupabase(db);
+          toast('数据已同步到云端');
+        } catch(e) { console.error(e); toast('云端同步失败'); }
+      })();
+      // Re-render everything
+      renderCalendars();
+      renderEnrollmentTable();
+      renderRoster();
+      updateStats();
+      toast('数据导入成功！');
+    } catch (err) {
+      toast('导入失败：文件格式错误');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file, 'utf-8');
+}
+</script>
+</body>
+</html>

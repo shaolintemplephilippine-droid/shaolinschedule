@@ -1,0 +1,3 @@
+.vercel-tmp/
+*.log
+*.pid
