@@ -1,6 +1,6 @@
 // ================================================================
 // Supabase Edge Function: student-report
-// Validates a token hash and returns one student's report data.
+// Validates a token and returns one student's report data.
 // ================================================================
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -68,20 +68,21 @@ serve(async (req) => {
     return errorResponse(429, "rate_limited");
   }
 
-  let body: { hash?: string };
+  let body: { token?: string };
   try {
     body = await req.json();
   } catch {
     return errorResponse(400, "bad_request");
   }
 
-  const hash = body.hash;
-  if (!hash || typeof hash !== "string" || hash.length !== 64) {
+  const token = body.token;
+  // Token must be a 64-char hex string
+  if (!token || typeof token !== "string" || !/^[0-9a-f]{64}$/.test(token)) {
     return errorResponse(400, "invalid");
   }
 
-  // Rate limit by token hash too
-  if (!checkRate("token:" + hash)) {
+  // Rate limit by token too
+  if (!checkRate("token:" + token)) {
     return errorResponse(429, "rate_limited");
   }
 
@@ -94,7 +95,7 @@ serve(async (req) => {
   const { data: tokenRow, error: tokenErr } = await supabase
     .from("student_report_tokens")
     .select("*")
-    .eq("token_hash", hash)
+    .eq("token_value", token)
     .maybeSingle();
 
   if (tokenErr || !tokenRow) {
@@ -122,7 +123,6 @@ serve(async (req) => {
     .maybeSingle();
 
   if (!enrRow) {
-    // Token is valid but enrollment record missing
     return errorResponse(404, "not_found");
   }
 

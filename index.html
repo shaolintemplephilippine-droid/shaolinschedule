@@ -2517,19 +2517,19 @@ async function generateReportLink(cls, name) {
   const oldToken = _reportTokens.get(cls + '|' + name);
   if (oldToken && !oldToken.is_revoked) {
     const { error: revErr } = await _supabase.from('student_report_tokens')
-      .update({ is_revoked: true }).eq('token_hash', oldToken.token_hash);
+      .update({ is_revoked: true }).eq('token_value', oldToken.token_value);
     if (revErr) { console.warn('[Token] revoke old failed:', revErr.message); }
     oldToken.is_revoked = true;
   }
-  const rawToken = crypto.randomUUID() + crypto.randomUUID();
-  const buf = new TextEncoder().encode(rawToken);
-  const hashBuf = await crypto.subtle.digest('SHA-256', buf);
-  const tokenHash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  // Generate 32 random bytes → 64 hex characters
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const rawToken = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
   const { error } = await _supabase.from('student_report_tokens').insert({
-    token_hash: tokenHash, class_name: cls, student_name: name, expires_at: null, is_revoked: false
+    token_value: rawToken, class_name: cls, student_name: name, expires_at: null, is_revoked: false
   });
   if (error) { toast('生成失败：' + error.message); return; }
-  _reportTokens.set(cls + '|' + name, { is_revoked: false, created_at: new Date().toISOString(), token_hash: tokenHash });
+  _reportTokens.set(cls + '|' + name, { is_revoked: false, created_at: new Date().toISOString(), token_value: rawToken });
   renderEnrollmentTable();
   const link = 'https://shaolintemplephilippine-droid.github.io/shaolinschedule/student-report.html#t=' + rawToken;
   showTokenModal(link, name);
@@ -2565,7 +2565,7 @@ async function revokeReportLink(cls, name, btn) {
     const key = cls + '|' + name;
     const token = _reportTokens.get(key);
     if (token && _supabase) {
-      const { error } = await _supabase.from('student_report_tokens').update({ is_revoked: true }).eq('token_hash', token.token_hash);
+      const { error } = await _supabase.from('student_report_tokens').update({ is_revoked: true }).eq('token_value', token.token_value);
       if (error) { toast('停用失败：' + error.message); return; }
     }
     token.is_revoked = true;
