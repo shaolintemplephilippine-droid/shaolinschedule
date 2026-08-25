@@ -3,304 +3,324 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>少林文化中心｜学员课时查询</title>
+  <title>少林文化中心｜学员课时查询（管理员）</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
   <style>
     :root{--ink:#202124;--muted:#697077;--line:#e6e7e8;--brand:#9b241c;--cream:#fffaf2;--ok:#147a4a;--warn:#a25b00}
     *{box-sizing:border-box} body{margin:0;background:#f5f3ef;color:var(--ink);font-family:"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif}
     .shell{max-width:820px;margin:0 auto;padding:24px 16px 48px}.hero{padding:20px 4px 24px;text-align:center}.seal{display:inline-grid;place-items:center;width:48px;height:48px;border:2px solid var(--brand);border-radius:50%;color:var(--brand);font-size:23px}.hero h1{font-size:25px;margin:10px 0 6px}.hero p{margin:0;color:var(--muted);font-size:14px}
-    .search{display:grid;grid-template-columns:1fr auto;gap:9px;padding:10px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 5px 18px #2b210b0c}.search input,.search select{width:100%;padding:12px 13px;border:1px solid #cfd2d4;border-radius:9px;font:inherit}.search button,.actions button{border:0;border-radius:9px;padding:12px 17px;background:var(--brand);color:white;font:inherit;font-weight:700;cursor:pointer}.hint{min-height:23px;margin:8px 3px 16px;color:var(--muted);font-size:13px}
+    .search{display:grid;grid-template-columns:1fr auto;gap:9px;padding:10px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 5px 18px #2b210b0c}.search input{width:100%;padding:12px 13px;border:1px solid #cfd2d4;border-radius:9px;font:inherit}.search button,.actions button{border:0;border-radius:9px;padding:12px 17px;background:var(--brand);color:white;font:inherit;font-weight:700;cursor:pointer}.hint{min-height:23px;margin:8px 3px 16px;color:var(--muted);font-size:13px}
     .card{overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 7px 22px #2b210b0a}.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 16px;background:var(--cream);border-bottom:1px solid #f0e7d9}.student-name{font-size:24px;font-weight:800}.meta{margin-top:4px;color:var(--muted);font-size:13px}.stamp{text-align:right;color:var(--muted);font-size:12px;white-space:nowrap}.stamp b{display:block;color:var(--brand);font-size:15px}.summary{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line)}.stat{padding:18px 11px;text-align:center;border-right:1px solid var(--line)}.stat:last-child{border:0}.stat b{display:block;font-size:27px;color:var(--brand);line-height:1.1}.stat small{display:block;margin-top:5px;color:var(--muted)}
     .details{padding:18px 20px}.details h2{font-size:16px;margin:0 0 10px}.info{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}.info div{padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}.info div:nth-last-child(-n+2){border-bottom:0}.info span{display:block;color:var(--muted);font-size:12px;margin-bottom:3px}.good{color:var(--ok);font-weight:700}.caution{color:var(--warn);font-weight:700}
-    .attendance-head{display:flex;justify-content:space-between;align-items:center;margin:23px 0 10px}.attendance-head h2{margin:0}.attendance-head select{padding:7px 9px;border:1px solid #cfd2d4;border-radius:7px;font:inherit;font-size:13px}.records{border:1px solid var(--line);border-radius:10px;overflow:hidden}.record{display:grid;grid-template-columns:98px 1fr auto;gap:10px;padding:12px;border-bottom:1px solid var(--line);font-size:14px}.record:last-child{border:0}.record time{color:var(--muted)}.record em{font-style:normal;color:var(--ok);font-size:12px;font-weight:700}.record em.absent{color:#a83c32}.empty{padding:24px;text-align:center;color:var(--muted);font-size:14px}.actions{display:flex;gap:9px;padding:0 20px 20px}.actions button.secondary{color:var(--brand);background:#fff;border:1px solid var(--brand)}.foot{text-align:center;color:var(--muted);font-size:12px;margin-top:15px}.hidden{display:none}
-    .loader{text-align:center;padding:40px;color:var(--muted);font-size:14px}.loader::after{content:'';display:inline-block;width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:spin .6s linear infinite;margin-left:8px;vertical-align:middle}@keyframes spin{to{transform:rotate(360deg)}}
+    .attendance-head{display:flex;justify-content:space-between;align-items:center;margin:23px 0 10px}.attendance-head h2{margin:0}.attendance-head select{padding:7px 9px;border:1px solid #cfd2d4;border-radius:7px;font:inherit;font-size:13px}.records{border:1px solid var(--line);border-radius:10px;overflow:hidden}.record{display:grid;grid-template-columns:98px 1fr auto;gap:10px;padding:12px;border-bottom:1px solid var(--line);font-size:14px}.record:last-child{border:0}.record time{color:var(--muted)}.record em{font-style:normal;color:var(--ok);font-size:12px;font-weight:700}.empty{padding:24px;text-align:center;color:var(--muted);font-size:14px}.actions{display:flex;gap:9px;padding:0 20px 20px}.actions button.secondary{color:var(--brand);background:#fff;border:1px solid var(--brand)}.foot{text-align:center;color:var(--muted);font-size:12px;margin-top:15px}.hidden{display:none}
+    .loader{text-align:center;padding:40px;color:var(--muted);font-size:14px}
     .back-link{display:inline-block;margin-bottom:12px;color:var(--muted);font-size:13px;text-decoration:none}.back-link:hover{color:var(--brand)}
+    /* Login */
+    #login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#1e293b 0%,#334155 100%);z-index:10000;display:flex;align-items:center;justify-content:center}
+    .login-card{background:#fff;padding:40px;border-radius:16px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .login-card h2{margin:0 0 8px;text-align:center;font-size:22px}
+    .login-card .sub{text-align:center;color:#64748b;margin-bottom:24px;font-size:14px}
+    .login-card label{display:block;margin-bottom:16px;font-size:14px;color:#334155}
+    .login-card input{width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;margin-top:4px;box-sizing:border-box;font-family:inherit}
+    .login-card input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+    .login-card .err{color:#ef4444;font-size:13px;margin-top:8px;display:none;text-align:center}
+    .login-card .btn-login{width:100%;padding:12px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-family:inherit;margin-top:8px}
+    .login-card .btn-login:hover{background:#2563eb}
+    .login-card .btn-login:disabled{opacity:.6;cursor:wait}
+    .auth-bar{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:12px;color:#697077;margin-bottom:8px}
+    .auth-bar .auth-email{font-weight:600;color:#202124}
+    .auth-bar .btn-logout{padding:4px 10px;font-size:12px;border:1px solid #e6e7e8;border-radius:6px;background:transparent;cursor:pointer;color:#697077;font-family:inherit}
+    .auth-bar .btn-logout:hover{background:#fef2f2;color:#ef4444;border-color:#fca5a5}
     @media(max-width:520px){.shell{padding:12px 10px 30px}.hero{padding:15px 0}.hero h1{font-size:21px}.search{grid-template-columns:1fr}.summary .stat{padding:14px 5px}.stat b{font-size:23px}.details{padding:16px 13px}.card-head{padding:16px 14px}.info{grid-template-columns:1fr}.info div:nth-last-child(2){border-bottom:1px solid var(--line)}.record{grid-template-columns:86px 1fr auto}.actions{padding:0 13px 16px}}
-    @media print{body{background:#fff}.shell{max-width:none;padding:0}.hero,.search,.hint,.actions,.foot,.back-link{display:none}.card{border:0;box-shadow:none;border-radius:0}.hidden{display:none!important}}
+    @media print{body{background:#fff}.shell{max-width:none;padding:0}.hero,.search,.hint,.actions,.foot,.back-link,.auth-bar{display:none}.card{border:0;box-shadow:none;border-radius:0}.hidden{display:none!important}}
   </style>
 </head>
 <body>
-  <main class="shell">
-    <a href="index.html" class="back-link">← 返回管理后台</a>
-    <header class="hero"><div class="seal">少</div><h1>少林文化中心 · 学员课时查询</h1><p>输入学员姓名，查看当月考勤及课时情况</p></header>
-    <section class="search" aria-label="查询学员"><input id="nameInput" list="studentNames" placeholder="请输入学员姓名" autocomplete="off"><datalist id="studentNames"></datalist><button id="searchButton">查询</button></section>
-    <div class="hint" id="hint">请输入完整或部分姓名进行查询</div>
-    <div id="loader" class="loader hidden">正在加载数据</div>
-    <section id="report" class="card hidden" aria-live="polite">
-      <div class="card-head"><div><div id="studentName" class="student-name"></div><div id="courseName" class="meta"></div></div><div class="stamp"><b>课时明细</b><span id="reportDate"></span></div></div>
-      <div class="summary"><div class="stat"><b id="totalHours"></b><small>总课时</small></div><div class="stat"><b id="usedHours"></b><small>已消课时</small></div><div class="stat"><b id="remainHours"></b><small>剩余课时</small></div></div>
-      <div class="details"><h2>课时详情</h2><div class="info"><div><span>生效日期</span><b id="startDate"></b></div><div><span>到期日期</span><b id="endDate"></b></div><div><span>有效期天数</span><b id="validDays"></b></div><div><span>剩余天数</span><b id="daysLeft"></b></div></div>
-        <div class="attendance-head"><h2 id="monthTitle">当月考勤</h2><select id="monthPicker" aria-label="选择月份"></select></div><div id="records" class="records"></div>
-      </div><div class="actions"><button id="printButton">打印／保存为图片</button><button id="shareButton" class="secondary">分享明细</button></div>
-    </section><p class="foot">课时以中心考勤记录为准。如有疑问，请联系您的教练。</p>
-  </main>
-  <script>
-    // ===================== Supabase (read-only) =====================
-    const SUPABASE_URL = 'https://wftnszpquwlqmgcevkyj.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_RJbXFWVO0UAsslybWKj1Ig_uRyi3dj1';
-    let _supabase = null;
-    try {
-      if (window.supabase && window.supabase.createClient) {
-        _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      }
-    } catch(e) { console.warn('[Supabase] Init failed:', e); }
 
-    // ===================== In-memory data =====================
-    let DATA = { students: {}, attendance: {}, enrollment: {} };
-    let active = null;
+<!-- Login overlay -->
+<div id="login-overlay" style="display:none">
+  <div class="login-card">
+    <h2>🥋 管理员登录</h2>
+    <div class="sub">学员课时查询 · 需管理员身份</div>
+    <label>邮箱<input type="email" id="login-email" placeholder="admin@example.com"></label>
+    <label>密码<input type="password" id="login-password" placeholder="输入密码"></label>
+    <div id="login-error" class="err"></div>
+    <button class="btn-login" id="login-btn" onclick="handleLogin()">登录</button>
+  </div>
+</div>
 
-    const $ = id => document.getElementById(id);
-    const fmt = date => new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'long',day:'numeric'}).format(new Date(date+'T12:00:00'));
-    const todayISO = () => new Date().toISOString().slice(0,10);
-    function attKey(date, time, cls) { return date + '|' + time + '|' + cls; }
-    function enrollKey(cls, name) { return cls + '|' + name; }
+<main class="shell" id="app-shell" style="display:none">
+  <div class="auth-bar" id="auth-bar" style="display:none">
+    <span>已登录：<span class="auth-email" id="auth-email"></span></span>
+    <button class="btn-logout" onclick="handleLogout()">退出</button>
+  </div>
+  <a href="index.html" class="back-link">← 返回管理后台</a>
+  <header class="hero"><div class="seal">少</div><h1>少林文化中心 · 学员课时查询</h1><p>输入学员姓名，查看考勤及课时情况（可截图发给学员）</p></header>
+  <section class="search" aria-label="查询学员"><input id="nameInput" list="studentNames" placeholder="请输入学员姓名" autocomplete="off"><datalist id="studentNames"></datalist><button id="searchButton">查询</button></section>
+  <div class="hint" id="hint">请输入完整或部分姓名进行查询</div>
+  <section id="report" class="card hidden" aria-live="polite">
+    <div class="card-head"><div><div id="studentName" class="student-name"></div><div id="courseName" class="meta"></div></div><div class="stamp"><b>课时明细</b><span id="reportDate"></span></div></div>
+    <div class="summary"><div class="stat"><b id="totalHours"></b><small>总课时</small></div><div class="stat"><b id="usedHours"></b><small>已消课时</small></div><div class="stat"><b id="remainHours"></b><small>剩余课时</small></div></div>
+    <div class="details"><h2>课时详情</h2><div class="info"><div><span>生效日期</span><b id="startDate"></b></div><div><span>到期日期</span><b id="endDate"></b></div><div><span>有效期天数</span><b id="validDays"></b></div><div><span>剩余天数</span><b id="daysLeft"></b></div></div>
+      <div class="attendance-head"><h2 id="monthTitle">当月考勤</h2><select id="monthPicker" aria-label="选择月份"></select></div><div id="records" class="records"></div>
+    </div><div class="actions"><button id="printButton">打印／保存为图片</button><button id="shareButton" class="secondary">分享明细</button></div>
+  </section><p class="foot">课时以中心考勤记录为准。如有疑问，请联系您的教练。</p>
+</main>
 
-    // ===================== Load data from Supabase =====================
-    async function loadCloudData() {
-      if (!_supabase) {
-        $('hint').textContent = '离线模式：无法连接服务器，请检查网络后刷新页面。';
-        return;
-      }
-      $('loader').classList.remove('hidden');
-      try {
-        const [{ data: stuRows, error: e1 }, { data: attRows, error: e2 }, { data: enrRows, error: e3 }] = await Promise.all([
-          _supabase.from('students').select('*').order('class_name').order('name'),
-          _supabase.from('attendance_records').select('*').order('date'),
-          _supabase.from('enrollment').select('*')
-        ]);
-        if (e1) console.warn('students error:', e1.message);
-        if (e2) console.warn('attendance error:', e2.message);
-        if (e3) console.warn('enrollment error:', e3.message);
+<script>
+// ===================== Supabase =====================
+const SUPABASE_URL = 'https://wftnszpquwlqmgcevkyj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_RJbXFWVO0UAsslybWKj1Ig_uRyi3dj1';
+let _supabase = null;
+try {
+  if (window.supabase && window.supabase.createClient) {
+    _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch(e) { console.warn('[Supabase] Init failed:', e); }
 
-        // Build students map
-        ['少林一班','少林二班','少林三四班'].forEach(c => { DATA.students[c] = []; });
-        if (stuRows) {
-          stuRows.forEach(r => {
-            if (!DATA.students[r.class_name]) DATA.students[r.class_name] = [];
-            DATA.students[r.class_name].push({ name: r.name, phone: r.phone||'', note: r.note||'' });
-          });
-        }
+// ===================== State =====================
+let DATA = { students: {}, attendance: {}, enrollment: {} };
+let active = null;
+const $ = id => document.getElementById(id);
+const fmt = date => new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'long',day:'numeric'}).format(new Date(date+'T12:00:00'));
+const todayISO = () => new Date().toISOString().slice(0,10);
+function enrollKey(cls, name) { return cls + '|' + name; }
 
-        // Build attendance map
-        if (attRows) {
-          attRows.forEach(r => {
-            DATA.attendance[r.date+'|'+r.time+'|'+r.class_name] = { teacher: r.teacher||'', students: r.student_names||[] };
-          });
-        }
+// ===================== Auth =====================
+async function handleLogin() {
+  if (!_supabase) { alert('Supabase 未连接'); return; }
+  const email = $('login-email').value.trim();
+  const password = $('login-password').value;
+  const btn = $('login-btn');
+  const errEl = $('login-error');
+  btn.disabled = true; btn.textContent = '登录中...'; errEl.style.display = 'none';
+  const { error } = await _supabase.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = '登录';
+  if (error) { errEl.textContent = '登录失败：' + error.message; errEl.style.display = 'block'; }
+}
+async function handleLogout() {
+  if (_supabase) await _supabase.auth.signOut();
+}
 
-        // Build enrollment map
-        if (enrRows) {
-          enrRows.forEach(r => {
-            DATA.enrollment[r.class_name+'|'+r.student_name] = {
-              totalHours: r.total_hours||0, validDays: r.valid_days||0,
-              startDate: r.start_date||'', endDate: r.end_date||'',
-              beforeJune: r.before_june||0, isDisciple: r.is_disciple||false
-            };
-          });
-        }
+async function _startApp(session) {
+  $('login-overlay').style.display = 'none';
+  $('app-shell').style.display = '';
+  $('auth-bar').style.display = 'flex';
+  $('auth-email').textContent = session.user.email;
+  await loadCloudData();
+}
 
-        // Populate datalist
-        const datalist = $('studentNames');
-        datalist.innerHTML = '';
-        const allNames = new Set();
-        Object.values(DATA.students).forEach(list => list.forEach(s => allNames.add(s.name)));
-        allNames.forEach(name => {
-          const o = document.createElement('option');
-          o.value = name;
-          datalist.append(o);
-        });
+// ===================== Data (authenticated) =====================
+async function loadCloudData() {
+  if (!_supabase) { $('hint').textContent = '离线模式：无法连接服务器'; return; }
+  $('hint').textContent = '正在加载数据...';
+  try {
+    const [{ data: stuRows, error: e1 }, { data: attRows, error: e2 }, { data: enrRows, error: e3 }] = await Promise.all([
+      _supabase.from('students').select('*').order('class_name').order('name'),
+      _supabase.from('attendance_records').select('*').order('date'),
+      _supabase.from('enrollment').select('*')
+    ]);
+    if (e1) console.warn('students:', e1.message);
+    if (e2) console.warn('attendance:', e2.message);
+    if (e3) console.warn('enrollment:', e3.message);
 
-        $('loader').classList.add('hidden');
-        $('hint').textContent = '已加载 ' + allNames.size + ' 名学员数据，请输入姓名查询。';
-      } catch(e) {
-        console.error('[Load]', e);
-        $('loader').classList.add('hidden');
-        $('hint').textContent = '数据加载失败：' + e.message + '，请刷新重试。';
-      }
+    DATA.students = {}; DATA.attendance = {}; DATA.enrollment = {};
+    ['少林一班','少林二班','少林三四班'].forEach(c => { DATA.students[c] = []; });
+    if (stuRows) stuRows.forEach(r => {
+      if (!DATA.students[r.class_name]) DATA.students[r.class_name] = [];
+      DATA.students[r.class_name].push({ name: r.name, phone: r.phone||'', note: r.note||'' });
+    });
+    if (attRows) attRows.forEach(r => {
+      DATA.attendance[r.date+'|'+r.time+'|'+r.class_name] = { teacher: r.teacher||'', students: r.student_names||[] };
+    });
+    if (enrRows) enrRows.forEach(r => {
+      DATA.enrollment[r.class_name+'|'+r.student_name] = {
+        totalHours: r.total_hours||0, validDays: r.valid_days||0,
+        startDate: r.start_date||'', endDate: r.end_date||'',
+        beforeJune: r.before_june||0, isDisciple: r.is_disciple||false
+      };
+    });
+
+    const datalist = $('studentNames');
+    datalist.innerHTML = '';
+    const allNames = new Set();
+    Object.values(DATA.students).forEach(list => list.forEach(s => allNames.add(s.name)));
+    allNames.forEach(name => { const o = document.createElement('option'); o.value = name; datalist.append(o); });
+
+    $('hint').textContent = '已加载 ' + allNames.size + ' 名学员数据，请输入姓名查询。';
+  } catch(e) {
+    console.error('[Load]', e);
+    $('hint').textContent = '数据加载失败：' + e.message;
+  }
+}
+
+// ===================== Computed =====================
+function getEnrollment(cls, name) {
+  return DATA.enrollment[enrollKey(cls, name)] || { totalHours:0, validDays:0, startDate:'', endDate:'', beforeJune:0, isDisciple:false };
+}
+
+function calcConsumption(cls, name) {
+  const monthly = {};
+  let fromAttendance = 0;
+  Object.keys(DATA.attendance).forEach(key => {
+    const parts = key.split('|');
+    if (parts.length !== 3) return;
+    const [date, time, className] = parts;
+    if (className !== cls) return;
+    const rec = DATA.attendance[key];
+    if (!rec || !rec.students || !rec.students.includes(name)) return;
+    const m = parseInt(date.split('-')[1], 10);
+    monthly[m] = (monthly[m] || 0) + 1;
+    fromAttendance++;
+  });
+  const enroll = getEnrollment(cls, name);
+  return { monthly, total: (parseInt(enroll.beforeJune)||0) + fromAttendance, fromAttendance };
+}
+
+function getStudentRecords(cls, name) {
+  const records = [];
+  Object.keys(DATA.attendance).forEach(key => {
+    const parts = key.split('|');
+    if (parts.length !== 3) return;
+    const [date, time, className] = parts;
+    if (className !== cls) return;
+    const rec = DATA.attendance[key];
+    if (!rec || !rec.students || !rec.students.includes(name)) return;
+    records.push({ date, time, className, teacher: rec.teacher||'' });
+  });
+  return records.sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
+}
+
+function findStudent(query) {
+  const q = query.trim();
+  if (!q) return null;
+  for (const [cls, list] of Object.entries(DATA.students)) {
+    const st = list.find(s => s.name === q);
+    if (st) return { ...st, className: cls };
+  }
+  for (const [cls, list] of Object.entries(DATA.students)) {
+    const st = list.find(s => s.name.includes(q));
+    if (st) return { ...st, className: cls };
+  }
+  return null;
+}
+
+function dayDiff(a, b) {
+  if (!a || !b) return null;
+  return Math.max(0, Math.ceil((new Date(b+'T00:00:00') - new Date(a+'T00:00:00')) / 86400000));
+}
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const end = new Date(dateStr + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.ceil((end - today) / 86400000);
+}
+
+// ===================== Render =====================
+function render(student) {
+  active = student;
+  const enroll = getEnrollment(student.className, student.name);
+  const cons = calcConsumption(student.className, student.name);
+  const isDisciple = enroll.isDisciple;
+  const usedHours = cons.total;
+  const remaining = isDisciple ? '∞' : (enroll.totalHours - usedHours);
+  const now = todayISO();
+
+  $('studentName').textContent = student.name;
+  $('courseName').textContent = student.className + (isDisciple ? ' · 弟子班' : '');
+  $('reportDate').textContent = '更新于 ' + fmt(now);
+  $('totalHours').textContent = isDisciple ? '不限' : enroll.totalHours;
+  $('usedHours').textContent = usedHours;
+  $('remainHours').textContent = remaining;
+  $('startDate').textContent = enroll.startDate ? fmt(enroll.startDate) : '-';
+  $('endDate').textContent = enroll.endDate ? fmt(enroll.endDate) : '-';
+  const vd = enroll.startDate && enroll.endDate ? dayDiff(enroll.startDate, enroll.endDate) : null;
+  $('validDays').textContent = vd !== null ? vd + ' 天' : (enroll.validDays ? enroll.validDays + ' 天' : '-');
+  const days = daysUntil(enroll.endDate);
+  if (days !== null) {
+    $('daysLeft').textContent = days < 0 ? '已超期 ' + Math.abs(days) + ' 天' : days + ' 天';
+    $('daysLeft').className = days <= 14 ? 'caution' : (days < 0 ? 'caution' : 'good');
+  } else { $('daysLeft').textContent = '-'; $('daysLeft').className = ''; }
+
+  const allRecords = getStudentRecords(student.className, student.name);
+  const monthSet = new Set();
+  allRecords.forEach(r => monthSet.add(r.date.slice(0, 7)));
+  monthSet.add(now.slice(0, 7));
+  const monthList = [...monthSet].sort().reverse();
+  $('monthPicker').innerHTML = monthList.map(m => '<option value="'+m+'">'+m.replace('-',' 年 ')+' 月</option>').join('');
+  $('monthPicker').onchange = () => renderAttendance(allRecords);
+  renderAttendance(allRecords);
+  $('report').classList.remove('hidden');
+  $('report').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderAttendance(allRecords) {
+  const month = $('monthPicker').value;
+  const records = allRecords.filter(r => r.date.startsWith(month));
+  $('monthTitle').textContent = month.replace('-',' 年 ')+' 月考勤（'+records.length+' 次）';
+  if (!records.length) { $('records').innerHTML = '<div class="empty">本月暂无考勤记录</div>'; return; }
+  const byDate = {};
+  records.forEach(r => { if (!byDate[r.date]) byDate[r.date] = []; byDate[r.date].push(r); });
+  let html = '';
+  Object.keys(byDate).sort().reverse().forEach(date => {
+    byDate[date].forEach(r => {
+      html += '<div class="record"><time>'+fmt(r.date)+'</time><span>'+r.time+' · '+r.className+(r.teacher?'<br><small style="color:var(--muted)">'+r.teacher+'</small>':'')+'</span><em>出勤 · 1 课时</em></div>';
+    });
+  });
+  $('records').innerHTML = html;
+}
+
+// ===================== Search =====================
+function search() {
+  const q = $('nameInput').value.trim();
+  if (!q) { $('hint').textContent = '请输入学员姓名'; return; }
+  const found = findStudent(q);
+  if (!found) { $('report').classList.add('hidden'); $('hint').textContent = '未找到"'+q+'"，请核对姓名或联系中心。'; return; }
+  $('hint').textContent = '已找到 '+found.name+'（'+found.className+'）的课时明细';
+  render(found);
+}
+
+// ===================== Share =====================
+function shareDetails() {
+  if (!active) return;
+  const enroll = getEnrollment(active.className, active.name);
+  const cons = calcConsumption(active.className, active.name);
+  const isDisciple = enroll.isDisciple;
+  const remaining = isDisciple ? '不限' : (enroll.totalHours - cons.total);
+  const text = '【少林文化中心 · 课时明细】\n学员：'+active.name+'\n班级：'+active.className+'\n总课时：'+(isDisciple?'不限（弟子班）':enroll.totalHours)+'\n已消课时：'+cons.total+'\n剩余课时：'+remaining+'\n生效日期：'+(enroll.startDate||'-')+'\n到期日期：'+(enroll.endDate||'-')+'\n剩余天数：'+(daysUntil(enroll.endDate) ?? '-');
+  if (navigator.share) { navigator.share({title:'学员课时明细',text}).catch(()=>{}); }
+  else { navigator.clipboard.writeText(text).then(()=>alert('课时明细已复制，可直接发送给学员。')).catch(()=>{ prompt('请复制以下内容：',text); }); }
+}
+
+// ===================== Init =====================
+$('searchButton').onclick = search;
+$('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
+$('printButton').onclick = () => window.print();
+$('shareButton').onclick = shareDetails;
+
+(async function init() {
+  if (!_supabase) {
+    $('login-overlay').style.display = 'none';
+    $('app-shell').style.display = '';
+    $('hint').textContent = '离线模式：Supabase 未加载，无法查询。';
+    return;
+  }
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (session) { await _startApp(session); }
+  else { $('login-overlay').style.display = 'flex'; }
+})();
+
+if (_supabase) {
+  _supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      $('login-overlay').style.display = 'flex';
+      $('app-shell').style.display = 'none';
+      $('auth-bar').style.display = 'none';
+    } else if (event === 'SIGNED_IN' && session) {
+      _startApp(session);
     }
-
-    // ===================== Computed values =====================
-    function getEnrollment(cls, name) {
-      const key = enrollKey(cls, name);
-      return DATA.enrollment[key] || { totalHours: 0, validDays: 0, startDate: '', endDate: '', beforeJune: 0, isDisciple: false };
-    }
-
-    function calcConsumption(cls, name) {
-      const monthly = {};
-      let fromAttendance = 0;
-      Object.keys(DATA.attendance).forEach(key => {
-        const parts = key.split('|');
-        if (parts.length !== 3) return;
-        const [date, time, className] = parts;
-        if (className !== cls) return;
-        const rec = DATA.attendance[key];
-        if (!rec || !rec.students || !rec.students.includes(name)) return;
-        const m = parseInt(date.split('-')[1], 10);
-        monthly[m] = (monthly[m] || 0) + 1;
-        fromAttendance++;
-      });
-      const enroll = getEnrollment(cls, name);
-      const total = (parseInt(enroll.beforeJune) || 0) + fromAttendance;
-      return { monthly, total, fromAttendance };
-    }
-
-    function getStudentAttendanceRecords(cls, name) {
-      const records = [];
-      Object.keys(DATA.attendance).forEach(key => {
-        const parts = key.split('|');
-        if (parts.length !== 3) return;
-        const [date, time, className] = parts;
-        if (className !== cls) return;
-        const rec = DATA.attendance[key];
-        if (!rec || !rec.students || !rec.students.includes(name)) return;
-        records.push({ date, time, className, teacher: rec.teacher || '' });
-      });
-      return records.sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
-    }
-
-    function findStudent(query) {
-      const q = query.trim();
-      if (!q) return null;
-      // Exact match first
-      for (const [cls, list] of Object.entries(DATA.students)) {
-        const st = list.find(s => s.name === q);
-        if (st) return { ...st, className: cls };
-      }
-      // Partial match
-      for (const [cls, list] of Object.entries(DATA.students)) {
-        const st = list.find(s => s.name.includes(q));
-        if (st) return { ...st, className: cls };
-      }
-      return null;
-    }
-
-    function dayDiff(a, b) {
-      if (!a || !b) return null;
-      return Math.max(0, Math.ceil((new Date(b+'T00:00:00') - new Date(a+'T00:00:00')) / 86400000));
-    }
-
-    function daysUntil(dateStr) {
-      if (!dateStr) return null;
-      const end = new Date(dateStr + 'T00:00:00');
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      return Math.ceil((end - today) / 86400000);
-    }
-
-    // ===================== Render =====================
-    function render(student) {
-      active = student;
-      const enroll = getEnrollment(student.className, student.name);
-      const cons = calcConsumption(student.className, student.name);
-      const isDisciple = enroll.isDisciple;
-      const usedHours = cons.total;
-      const remaining = isDisciple ? '∞' : (enroll.totalHours - usedHours);
-      const now = todayISO();
-
-      $('studentName').textContent = student.name;
-      $('courseName').textContent = student.className + (isDisciple ? ' · 弟子班' : '');
-      $('reportDate').textContent = '更新于 ' + fmt(now);
-      $('totalHours').textContent = isDisciple ? '不限' : enroll.totalHours;
-      $('usedHours').textContent = usedHours;
-      $('remainHours').textContent = remaining;
-      $('startDate').textContent = enroll.startDate ? fmt(enroll.startDate) : '-';
-      $('endDate').textContent = enroll.endDate ? fmt(enroll.endDate) : '-';
-
-      const vd = enroll.startDate && enroll.endDate ? dayDiff(enroll.startDate, enroll.endDate) : null;
-      $('validDays').textContent = vd !== null ? vd + ' 天' : (enroll.validDays ? enroll.validDays + ' 天' : '-');
-
-      const days = daysUntil(enroll.endDate);
-      if (days !== null) {
-        $('daysLeft').textContent = (days < 0 ? '已超期 ' + Math.abs(days) + ' 天' : days + ' 天');
-        $('daysLeft').className = days <= 14 ? 'caution' : (days < 0 ? 'caution' : 'good');
-      } else {
-        $('daysLeft').textContent = '-';
-        $('daysLeft').className = '';
-      }
-
-      // Build month picker from actual attendance records
-      const allRecords = getStudentAttendanceRecords(student.className, student.name);
-      const monthSet = new Set();
-      allRecords.forEach(r => monthSet.add(r.date.slice(0, 7)));
-      // Also add current month
-      const curMonth = now.slice(0, 7);
-      monthSet.add(curMonth);
-      const monthList = [...monthSet].sort().reverse();
-
-      $('monthPicker').innerHTML = monthList.map(m => `<option value="${m}">${m.replace('-',' 年 ')} 月</option>`).join('');
-      $('monthPicker').onchange = () => renderAttendance(allRecords);
-      renderAttendance(allRecords);
-      $('report').classList.remove('hidden');
-      $('report').scrollIntoView({behavior:'smooth',block:'start'});
-    }
-
-    function renderAttendance(allRecords) {
-      const month = $('monthPicker').value;
-      const records = allRecords.filter(r => r.date.startsWith(month));
-      const monthLabel = month.replace('-', ' 年 ') + ' 月';
-      $('monthTitle').textContent = monthLabel + '考勤（' + records.length + ' 次）';
-
-      if (records.length === 0) {
-        $('records').innerHTML = '<div class="empty">本月暂无考勤记录</div>';
-        return;
-      }
-
-      // Group by date for display
-      const byDate = {};
-      records.forEach(r => {
-        if (!byDate[r.date]) byDate[r.date] = [];
-        byDate[r.date].push(r);
-      });
-
-      let html = '';
-      Object.keys(byDate).sort().reverse().forEach(date => {
-        const dayRecords = byDate[date];
-        dayRecords.forEach(r => {
-          html += `<div class="record"><time>${fmt(r.date)}</time><span>${r.time} · ${r.className}${r.teacher ? '<br><small style="color:var(--muted)">' + r.teacher + '</small>' : ''}</span><em>出勤 · 1 课时</em></div>`;
-        });
-      });
-      $('records').innerHTML = html;
-    }
-
-    // ===================== Search =====================
-    function search() {
-      const q = $('nameInput').value.trim();
-      if (!q) { $('hint').textContent = '请输入学员姓名'; return; }
-      const found = findStudent(q);
-      if (!found) {
-        $('report').classList.add('hidden');
-        $('hint').textContent = '未找到"' + q + '"，请核对姓名或联系中心。';
-        return;
-      }
-      $('hint').textContent = '已找到 ' + found.name + '（' + found.className + '）的课时明细';
-      render(found);
-    }
-
-    // ===================== Share =====================
-    function shareDetails() {
-      if (!active) return;
-      const enroll = getEnrollment(active.className, active.name);
-      const cons = calcConsumption(active.className, active.name);
-      const isDisciple = enroll.isDisciple;
-      const usedHours = cons.total;
-      const remaining = isDisciple ? '不限' : (enroll.totalHours - usedHours);
-      const text = `【少林文化中心 · 课时明细】\n学员：${active.name}\n班级：${active.className}\n总课时：${isDisciple ? '不限（弟子班）' : enroll.totalHours}\n已消课时：${usedHours}\n剩余课时：${remaining}\n生效日期：${enroll.startDate || '-'}\n到期日期：${enroll.endDate || '-'}\n剩余天数：${daysUntil(enroll.endDate) ?? '-'}`;
-      if (navigator.share) {
-        navigator.share({ title: '学员课时明细', text }).catch(() => {});
-      } else {
-        navigator.clipboard.writeText(text).then(() => alert('课时明细已复制，可直接发送给学员。')).catch(() => {
-          // Fallback: show in prompt
-          prompt('请复制以下内容：', text);
-        });
-      }
-    }
-
-    // ===================== Init =====================
-    $('searchButton').onclick = search;
-    $('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
-    $('printButton').onclick = () => window.print();
-    $('shareButton').onclick = shareDetails;
-    loadCloudData();
-  </script>
+  });
+}
+</script>
 </body>
 </html>
