@@ -1,0 +1,195 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>少林文化中心｜学员课时报告</title>
+  <style>
+    :root{--ink:#202124;--muted:#697077;--line:#e6e7e8;--brand:#9b241c;--cream:#fffaf2;--ok:#147a4a;--warn:#a25b00}
+    *{box-sizing:border-box}body{margin:0;background:#f5f3ef;color:var(--ink);font-family:"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif}
+    .shell{max-width:820px;margin:0 auto;padding:24px 16px 48px}
+    .hero{padding:20px 4px 24px;text-align:center}
+    .seal{display:inline-grid;place-items:center;width:48px;height:48px;border:2px solid var(--brand);border-radius:50%;color:var(--brand);font-size:23px}
+    .hero h1{font-size:25px;margin:10px 0 6px}
+    .hero p{margin:0;color:var(--muted);font-size:14px}
+    .privacy{background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:10px 14px;font-size:13px;color:#92400e;text-align:center;margin-bottom:16px}
+    .card{overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 7px 22px #2b210b0a}
+    .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 16px;background:var(--cream);border-bottom:1px solid #f0e7d9}
+    .student-name{font-size:24px;font-weight:800}
+    .meta{margin-top:4px;color:var(--muted);font-size:13px}
+    .stamp{text-align:right;color:var(--muted);font-size:12px;white-space:nowrap}
+    .stamp b{display:block;color:var(--brand);font-size:15px}
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line)}
+    .stat{padding:18px 11px;text-align:center;border-right:1px solid var(--line)}
+    .stat:last-child{border:0}
+    .stat b{display:block;font-size:27px;color:var(--brand);line-height:1.1}
+    .stat small{display:block;margin-top:5px;color:var(--muted)}
+    .details{padding:18px 20px}
+    .details h2{font-size:16px;margin:0 0 10px}
+    .info{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+    .info div{padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
+    .info div:nth-last-child(-n+2){border-bottom:0}
+    .info span{display:block;color:var(--muted);font-size:12px;margin-bottom:3px}
+    .good{color:var(--ok);font-weight:700}
+    .caution{color:var(--warn);font-weight:700}
+    .att-title{margin:23px 0 10px;font-size:16px;font-weight:700}
+    .records{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+    .record{display:grid;grid-template-columns:98px 1fr auto;gap:10px;padding:12px;border-bottom:1px solid var(--line);font-size:14px}
+    .record:last-child{border:0}
+    .record time{color:var(--muted)}
+    .record em{font-style:normal;color:var(--ok);font-size:12px;font-weight:700}
+    .empty{padding:24px;text-align:center;color:var(--muted);font-size:14px}
+    .actions{display:flex;gap:9px;padding:0 20px 20px}
+    .actions button{border:0;border-radius:9px;padding:12px 17px;background:var(--brand);color:white;font:inherit;font-weight:700;cursor:pointer}
+    .actions button.secondary{color:var(--brand);background:#fff;border:1px solid var(--brand)}
+    .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:15px}
+    .error-box{text-align:center;padding:60px 20px;color:var(--muted)}
+    .error-box .icon{font-size:48px;margin-bottom:16px}
+    .error-box h2{font-size:18px;color:var(--ink);margin-bottom:8px}
+    .error-box p{font-size:14px;max-width:400px;margin:0 auto}
+    .hidden{display:none}
+    @media(max-width:520px){.shell{padding:12px 10px 30px}.hero{padding:15px 0}.hero h1{font-size:21px}.summary .stat{padding:14px 5px}.stat b{font-size:23px}.details{padding:16px 13px}.card-head{padding:16px 14px}.info{grid-template-columns:1fr}.info div:nth-last-child(2){border-bottom:1px solid var(--line)}.record{grid-template-columns:86px 1fr auto}.actions{padding:0 13px 16px}}
+    @media print{body{background:#fff}.shell{max-width:none;padding:0}.hero,.actions,.foot,.privacy{display:none}.card{border:0;box-shadow:none;border-radius:0}.hidden{display:none!important}}
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header class="hero"><div class="seal">少</div><h1>少林文化中心 · 学员课时报告</h1></header>
+  <div class="privacy">🔒 此链接仅供本人查看，请勿转发给他人。</div>
+
+  <div id="loading" style="text-align:center;padding:60px;color:var(--muted)">正在加载报告…</div>
+
+  <div id="error" class="error-box hidden">
+    <div class="icon">🔗</div>
+    <h2>链接无效或已过期</h2>
+    <p>请联系管理员获取新的专属报告链接。</p>
+  </div>
+
+  <section id="report" class="card hidden" aria-live="polite">
+    <div class="card-head">
+      <div><div id="rName" class="student-name"></div><div id="rClass" class="meta"></div></div>
+      <div class="stamp"><b>课时明细</b><span id="rDate"></span></div>
+    </div>
+    <div class="summary">
+      <div class="stat"><b id="rTotal"></b><small>总课时</small></div>
+      <div class="stat"><b id="rUsed"></b><small>已消课时</small></div>
+      <div class="stat"><b id="rRemain"></b><small>剩余课时</small></div>
+    </div>
+    <div class="details">
+      <h2>课时详情</h2>
+      <div class="info">
+        <div><span>生效日期</span><b id="rStart"></b></div>
+        <div><span>到期日期</span><b id="rEnd"></b></div>
+        <div><span>有效期天数</span><b id="rValidDays"></b></div>
+        <div><span>剩余天数</span><b id="rDaysLeft"></b></div>
+      </div>
+      <div class="att-title" id="rMonthTitle">当月考勤</div>
+      <div id="rRecords" class="records"></div>
+    </div>
+    <div class="actions">
+      <button onclick="window.print()">打印／保存为图片</button>
+      <button class="secondary" onclick="shareReport()">分享明细</button>
+    </div>
+  </section>
+
+  <p class="foot">课时以中心考勤记录为准。如有疑问，请联系您的教练。</p>
+</main>
+
+<script>
+const EDGE_FN_URL = 'https://wftnszpquwlqmgcevkyj.supabase.co/functions/v1/student-report';
+let reportData = null;
+
+async function sha256(text) {
+  const buf = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function fmt(dateStr) {
+  if (!dateStr) return '-';
+  return new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'long',day:'numeric'}).format(new Date(dateStr+'T12:00:00'));
+}
+
+async function loadReport() {
+  const hash = location.hash;
+  const match = hash.match(/[?&]t=([^&]+)/);
+  if (!match || !match[1]) {
+    showError(); return;
+  }
+  const token = match[1];
+  const tokenHash = await sha256(token);
+
+  try {
+    const res = await fetch(EDGE_FN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hash: tokenHash }),
+    });
+    if (!res.ok) { showError(); return; }
+    const data = await res.json();
+    renderReport(data);
+  } catch(e) {
+    console.error(e);
+    showError();
+  }
+}
+
+function showError() {
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('error').classList.remove('hidden');
+}
+
+function renderReport(d) {
+  reportData = d;
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('report').classList.remove('hidden');
+
+  const now = new Date();
+  document.getElementById('rName').textContent = d.name;
+  document.getElementById('rClass').textContent = d.className + (d.isDisciple ? ' · 弟子班' : '');
+  document.getElementById('rDate').textContent = '更新于 ' + fmt(now.toISOString().slice(0,10));
+  document.getElementById('rTotal').textContent = d.isDisciple ? '不限' : d.totalHours;
+  document.getElementById('rUsed').textContent = d.usedHours;
+  document.getElementById('rRemain').textContent = d.isDisciple ? '∞' : d.remainingHours;
+  document.getElementById('rStart').textContent = fmt(d.startDate);
+  document.getElementById('rEnd').textContent = fmt(d.endDate);
+
+  document.getElementById('rValidDays').textContent = d.validDays ? d.validDays + ' 天' : '-';
+
+  if (d.daysLeft !== null) {
+    const el = document.getElementById('rDaysLeft');
+    el.textContent = d.daysLeft < 0 ? '已超期 ' + Math.abs(d.daysLeft) + ' 天' : d.daysLeft + ' 天';
+    el.className = d.daysLeft <= 14 ? 'caution' : (d.daysLeft < 0 ? 'caution' : 'good');
+  } else {
+    document.getElementById('rDaysLeft').textContent = '-';
+  }
+
+  const records = d.monthlyAttendance || [];
+  const monthLabel = (d.currentMonth || '').replace('-',' 年 ') + ' 月';
+  document.getElementById('rMonthTitle').textContent = monthLabel + '考勤（' + records.length + ' 次）';
+
+  if (records.length === 0) {
+    document.getElementById('rRecords').innerHTML = '<div class="empty">本月暂无考勤记录</div>';
+    return;
+  }
+
+  let html = '';
+  records.forEach(r => {
+    html += '<div class="record"><time>' + fmt(r.date) + '</time><span>' + r.time + (r.teacher ? '<br><small style="color:var(--muted)">' + r.teacher + '</small>' : '') + '</span><em>出勤 · 1 课时</em></div>';
+  });
+  document.getElementById('rRecords').innerHTML = html;
+}
+
+function shareReport() {
+  if (!reportData) return;
+  const d = reportData;
+  const text = '【少林文化中心 · 课时明细】\n学员：' + d.name + '\n班级：' + d.className + '\n总课时：' + (d.isDisciple ? '不限（弟子班）' : d.totalHours) + '\n已消课时：' + d.usedHours + '\n剩余课时：' + (d.isDisciple ? '不限' : d.remainingHours) + '\n生效日期：' + (d.startDate || '-') + '\n到期日期：' + (d.endDate || '-') + '\n剩余天数：' + (d.daysLeft !== null ? d.daysLeft + ' 天' : '-');
+  if (navigator.share) { navigator.share({title:'学员课时明细',text}).catch(()=>{}); }
+  else { navigator.clipboard.writeText(text).then(()=>alert('课时明细已复制，可直接发送给学员。')).catch(()=>{prompt('请复制以下内容：',text)}); }
+}
+
+loadReport();
+</script>
+</body>
+</html>

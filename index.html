@@ -160,6 +160,10 @@ table.data-table .day-sun { color:var(--purple); font-weight:600; }
 .enrollment-table input[type="date"] { width:120px; }
 .enrollment-table .edit-actions { display:flex; gap:4px; justify-content:center; }
 .enrollment-table .edit-actions button { padding:3px 8px; font-size:12px; }
+.enrollment-table .token-cell { white-space:nowrap; min-width:180px; }
+.enrollment-table .token-btns { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; }
+.enrollment-table .token-active { color:var(--green); font-size:11px; }
+.enrollment-table .token-revoked { color:var(--muted); font-size:11px; font-style:italic; }
 
 /* ===== Modal ===== */
 .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:1000; }
@@ -1197,6 +1201,7 @@ async function _startApp(session) {
     console.warn('[App] loadDataAsync failed, using localStorage:', e);
     db = loadData();
   }
+  await loadTokensAsync().catch(e => console.warn('[Tokens] load failed:', e));
   if (db.sourceVersion !== SOURCE_VERSION) {
     runMigrations();
     saveData();
@@ -2307,7 +2312,7 @@ function renderEnrollmentTable() {
     <th>班级</th><th>姓名</th><th>总课时</th><th>有效期天数</th><th>生效日期</th><th>到期日期</th>
     <th>距离到期天数</th><th>总消课数</th>
     <th>6月</th><th>7月</th><th>8月</th><th>9月</th><th>10月</th><th>11月</th><th>12月</th>
-    <th>当前剩余</th><th>操作</th>
+    <th>当前剩余</th><th>操作</th><th>报告链接</th>
   </tr></thead><tbody>`;
 
   Object.keys(db.students).forEach(cls => {
@@ -2348,6 +2353,7 @@ function renderEnrollmentTable() {
           <button class="btn btn-sm btn-outline" onclick="editEnrollment('${esc(cls)}','${esc(st.name)}')">编辑</button>
           <button class="btn btn-sm btn-danger" onclick="deleteEnrollmentRow('${esc(cls)}','${esc(st.name)}',this)" title="删除该学员及其报课、出勤记录">删除</button>
         </td>
+        <td class="token-cell">${renderTokenCell(cls, st.name)}</td>
       </tr>`;
     });
   });
@@ -2468,6 +2474,102 @@ function deleteEnrollmentRow(cls, name, btn) {
       btn.textContent = '删除';
       btn.title = '删除该学员及其报课、出勤记录';
     }
+  }, 3000);
+}
+
+// ===================== Report Token Management =====================
+const _reportTokens = new Map();
+
+async function loadTokensAsync() {
+  if (!_supabase) return;
+  try {
+    const { data, error } = await _supabase.from('student_report_tokens').select('*');
+    if (error) { console.warn('[Tokens]', error.message); return; }
+    _reportTokens.clear();
+    (data || []).forEach(t => {
+      const key = t.class_name + '|' + t.student_name;
+      const existing = _reportTokens.get(key);
+      if (!existing || new Date(t.created_at) > new Date(existing.created_at)) {
+        _reportTokens.set(key, t);
+      }
+    });
+  } catch(e) { console.warn('[Tokens] load:', e); }
+}
+
+function renderTokenCell(cls, name) {
+  const key = cls + '|' + name;
+  const token = _reportTokens.get(key);
+  if (!token) {
+    return `<button class="btn btn-sm btn-outline" onclick="generateReportLink('${esc(cls)}','${esc(name)}')">📎 生成</button>`;
+  }
+  if (token.is_revoked) {
+    return `<span class="token-revoked">已停用</span> <button class="btn btn-sm btn-outline" onclick="generateReportLink('${esc(cls)}','${esc(name)}')">重新生成</button>`;
+  }
+  const created = token.created_at ? new Date(token.created_at).toLocaleDateString('zh-CN') : '';
+  return `<div class="token-btns"><span class="token-active">✅ 已生成${created ? ' (' + created + ')' : ''}</span>`
+    + `<button class="btn btn-sm btn-outline" onclick="copyReportLink('${esc(cls)}','${esc(name)}')" title="生成新链接将停用当前链接">🔄 换新</button>`
+    + `<button class="btn btn-sm btn-danger" onclick="revokeReportLink('${esc(cls)}','${esc(name)}',this)">停用</button></div>`;
+}
+
+async function generateReportLink(cls, name) {
+  if (!_supabase) { toast('Supabase 未连接'); return; }
+  const rawToken = crypto.randomUUID() + crypto.randomUUID();
+  const buf = new TextEncoder().encode(rawToken);
+  const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+  const tokenHash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
+  const { error } = await _supabase.from('student_report_tokens').insert({
+    token_hash: tokenHash, class_name: cls, student_name: name, expires_at: expiresAt, is_revoked: false
+  });
+  if (error) { toast('生成失败：' + error.message); return; }
+  _reportTokens.set(cls + '|' + name, { is_revoked: false, created_at: new Date().toISOString(), token_hash: tokenHash });
+  renderEnrollmentTable();
+  const link = 'https://shaolintemplephilippine-droid.github.io/shaolinschedule/student-report.html#t=' + rawToken;
+  showTokenModal(link, name);
+  toast('已为 ' + name + ' 生成报告链接');
+}
+
+function showTokenModal(link, name) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.maxWidth = '520px';
+  modal.innerHTML = '<h3>📎 专属报告链接已生成</h3>'
+    + '<div style="margin-bottom:12px;font-size:14px;color:var(--text2)">学员：' + name + '</div>'
+    + '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px;margin-bottom:16px;word-break:break-all;font-family:monospace;font-size:13px;user-select:all" id="rpt-link-text">' + link + '</div>'
+    + '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px;margin-bottom:16px;font-size:13px;color:#92400e">⚠️ 请立即复制此链接。关闭后将无法再次查看完整令牌。</div>'
+    + '<div class="modal-actions">'
+    + '<button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">关闭</button>'
+    + '<button class="btn btn-primary" onclick="navigator.clipboard.writeText(document.getElementById(\'rpt-link-text\').textContent).then(function(){toast(\'已复制\')}).catch(function(){prompt(\'请手动复制：\',document.getElementById(\'rpt-link-text\').textContent)})">📋 复制链接</button>'
+    + '</div>';
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+async function copyReportLink(cls, name) {
+  if (!confirm('生成新链接将自动停用当前链接，确定继续？')) return;
+  await generateReportLink(cls, name);
+}
+
+async function revokeReportLink(cls, name, btn) {
+  if (btn.classList.contains('confirming')) {
+    const key = cls + '|' + name;
+    const token = _reportTokens.get(key);
+    if (token && _supabase) {
+      const { error } = await _supabase.from('student_report_tokens').update({ is_revoked: true }).eq('token_hash', token.token_hash);
+      if (error) { toast('停用失败：' + error.message); return; }
+    }
+    token.is_revoked = true;
+    renderEnrollmentTable();
+    toast('已停用 ' + name + ' 的报告链接');
+    return;
+  }
+  btn.classList.add('confirming');
+  btn.textContent = '确认？';
+  setTimeout(function() {
+    if (btn.parentNode) { btn.classList.remove('confirming'); btn.textContent = '停用'; }
   }, 3000);
 }
 
