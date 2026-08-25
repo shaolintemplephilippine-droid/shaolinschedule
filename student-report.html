@@ -4,13 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
-  <title>少林文化中心｜学员课时报告 | Student Report</title>
+  <title>菲律宾少林文化中心｜学员课时报告 | Student Report</title>
   <style>
     :root{--ink:#202124;--muted:#697077;--line:#e6e7e8;--brand:#9b241c;--cream:#fffaf2;--ok:#147a4a;--warn:#a25b00}
     *{box-sizing:border-box}body{margin:0;background:#f5f3ef;color:var(--ink);font-family:"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif}
     .shell{max-width:820px;margin:0 auto;padding:24px 16px 48px}
     .hero{padding:20px 4px 24px;text-align:center}
-    .seal{display:inline-grid;place-items:center;width:48px;height:48px;border:2px solid var(--brand);border-radius:50%;color:var(--brand);font-size:23px}
+    .seal{display:inline-block;width:72px;height:72px}
+    .seal img{width:100%;height:100%;object-fit:contain}
     .hero h1{font-size:25px;margin:10px 0 6px}
     .hero p{margin:0;color:var(--muted);font-size:14px}
     .privacy{background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:10px 14px;font-size:13px;color:#92400e;text-align:center;margin-bottom:16px}
@@ -58,7 +59,7 @@
 </head>
 <body>
 <main class="shell">
-  <header class="hero"><div class="seal">少</div><h1 id="iTitle"></h1></header>
+  <header class="hero"><div class="seal"><img src="logo.png" alt="Philippine Shaolin Cultural Center"></div><h1 id="iTitle"></h1></header>
   <div class="privacy">🔒 <span id="iPrivacy"></span></div>
 
   <div id="loading" style="text-align:center;padding:60px;color:var(--muted)"><span id="iLoading"></span></div>
@@ -107,8 +108,8 @@ function bi(cn, en) { return cn + '<span class="en">' + en + '</span>'; }
 function setBi(id, cn, en) { var e = document.getElementById(id); if (e) e.innerHTML = bi(cn, en); }
 
 function applyLang() {
-  document.title = '少林文化中心 | Shaolin Cultural Center';
-  setBi('iTitle', '少林文化中心 · 学员课时报告', 'Shaolin Cultural Center · Student Report');
+  document.title = '菲律宾少林文化中心 | Philippine Shaolin Cultural Center';
+  setBi('iTitle', '菲律宾少林文化中心 · 学员课时报告', 'Philippine Shaolin Cultural Center · Student Report');
   setBi('iPrivacy', '此链接仅供本人查看，请勿转发给他人。', 'This link is for personal use only. Do not share with others.');
   setBi('iLoading', '正在加载报告…', 'Loading report…');
   setBi('iStampTitle', '课时明细', 'Class Details');
@@ -209,7 +210,7 @@ function renderReport(d) {
 function shareReport() {
   if (!reportData) return;
   var d = reportData;
-  var text = '[少林文化中心 Shaolin Cultural Center]\n'
+  var text = '[菲律宾少林文化中心 Philippine Shaolin Cultural Center]\n'
     + '学员 Student: ' + d.name + '\n'
     + '班级 Class: ' + d.className + '\n'
     + '总课时 Total: ' + (d.isDisciple ? '不限 Unlimited' : d.totalHours) + '\n'
