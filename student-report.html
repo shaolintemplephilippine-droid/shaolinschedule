@@ -61,9 +61,9 @@
   <div id="loading" style="text-align:center;padding:60px;color:var(--muted)">正在加载报告…</div>
 
   <div id="error" class="error-box hidden">
-    <div class="icon">🔗</div>
-    <h2>链接无效或已过期</h2>
-    <p>请联系管理员获取新的专属报告链接。</p>
+    <div class="icon" id="errorIcon">🔗</div>
+    <h2 id="errorTitle">链接无效或已过期</h2>
+    <p id="errorDesc">请联系管理员获取新的专属报告链接。</p>
   </div>
 
   <section id="report" class="card hidden" aria-live="polite">
@@ -113,9 +113,9 @@ function fmt(dateStr) {
 
 async function loadReport() {
   const hash = location.hash;
-  const match = hash.match(/[?&]t=([^&]+)/);
+  const match = hash.match(/[?&]?t=([^&]+)/);
   if (!match || !match[1]) {
-    showError(); return;
+    showError('invalid'); return;
   }
   const token = match[1];
   const tokenHash = await sha256(token);
@@ -129,16 +129,37 @@ async function loadReport() {
       },
       body: JSON.stringify({ hash: tokenHash }),
     });
-    if (!res.ok) { showError(); return; }
+    if (!res.ok) {
+      let errorCode = 'invalid';
+      try {
+        const errData = await res.json();
+        errorCode = errData.errorCode || 'invalid';
+      } catch(e) {}
+      showError(errorCode);
+      return;
+    }
     const data = await res.json();
     renderReport(data);
   } catch(e) {
     console.error(e);
-    showError();
+    showError('network');
   }
 }
 
-function showError() {
+var ERROR_MESSAGES = {
+  invalid:       { icon: '🔗', title: '查询链接无效', desc: '无法识别此查询链接，请联系管理员获取新的专属链接。' },
+  revoked:       { icon: '🚫', title: '查询链接已失效', desc: '此链接已被管理员停用，请联系管理员获取新链接。' },
+  expired:       { icon: '⏰', title: '查询链接已过期', desc: '此链接已超过有效期，请联系管理员获取新链接。' },
+  not_found:     { icon: '📋', title: '无法找到对应学员', desc: '系统中未找到该链接对应的学员信息，请联系管理员。' },
+  rate_limited:  { icon: '⏳', title: '访问过于频繁', desc: '请稍后再试。' },
+  network:       { icon: '⚠️', title: '系统暂时无法读取学员信息', desc: '请检查网络连接后刷新页面重试。' }
+};
+
+function showError(code) {
+  var msg = ERROR_MESSAGES[code] || ERROR_MESSAGES.invalid;
+  document.getElementById('errorIcon').textContent = msg.icon;
+  document.getElementById('errorTitle').textContent = msg.title;
+  document.getElementById('errorDesc').textContent = msg.desc;
   document.getElementById('loading').classList.add('hidden');
   document.getElementById('error').classList.remove('hidden');
 }

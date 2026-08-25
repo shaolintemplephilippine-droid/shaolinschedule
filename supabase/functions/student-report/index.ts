@@ -20,8 +20,8 @@ function corsHeaders() {
 
 // ---- Rate limiting (in-memory, per Deno isolate) ----
 const rateMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 30; // max requests per window
-const RATE_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT = 30;
+const RATE_WINDOW_MS = 60_000;
 
 function checkRate(key: string): boolean {
   const now = Date.now();
@@ -35,12 +35,19 @@ function checkRate(key: string): boolean {
   return true;
 }
 
-// ---- Generic error (same message for invalid/expired/revoked) ----
-const GENERIC_ERROR = "¡¥Ω”Œﬁ–ßªÚ“—π˝∆⁄£¨«Î¡™œµπ‹¿Ì‘±ªÒ»°–¬¡¥Ω”°£";
-
-function errorResponse(status: number, msg?: string) {
+// ---- Error responses with structured error codes ----
+function errorResponse(status: number, errorCode: string, msg?: string) {
+  const defaultMessages: Record<string, string> = {
+    invalid: "Êü•ËØ¢ÈìæÊé•Êó†Êïà",
+    revoked: "Êü•ËØ¢ÈìæÊé•Â∑≤Â§±Êïà",
+    expired: "Êü•ËØ¢ÈìæÊé•Â∑≤ËøáÊúü",
+    not_found: "Êó†Ê≥ïÊâæÂà∞ÂØπÂ∫îÂ≠¶Âëò",
+    rate_limited: "ËÆøÈóÆËøá‰∫éÈ¢ëÁπÅÔºåËØ∑Á®çÂêéÂÜçËØï",
+    bad_request: "ËØ∑Ê±ÇÊ†ºÂºèÈîôËØØ",
+    method_not_allowed: "Method not allowed",
+  };
   return new Response(
-    JSON.stringify({ error: msg || GENERIC_ERROR }),
+    JSON.stringify({ error: msg || defaultMessages[errorCode] || errorCode, errorCode }),
     { status, headers: { ...corsHeaders(), "Content-Type": "application/json" } }
   );
 }
@@ -52,30 +59,30 @@ serve(async (req) => {
   }
 
   if (req.method !== "POST") {
-    return errorResponse(405, "Method not allowed");
+    return errorResponse(405, "method_not_allowed");
   }
 
   // Rate limit by IP
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (!checkRate("ip:" + ip)) {
-    return errorResponse(429, "«Î«Ûπ˝”⁄∆µ∑±£¨«Î…‘∫Û‘Ÿ ‘°£");
+    return errorResponse(429, "rate_limited");
   }
 
   let body: { hash?: string };
   try {
     body = await req.json();
   } catch {
-    return errorResponse(400);
+    return errorResponse(400, "bad_request");
   }
 
   const hash = body.hash;
   if (!hash || typeof hash !== "string" || hash.length !== 64) {
-    return errorResponse(400);
+    return errorResponse(400, "invalid");
   }
 
   // Rate limit by token hash too
   if (!checkRate("token:" + hash)) {
-    return errorResponse(429, "«Î«Ûπ˝”⁄∆µ∑±£¨«Î…‘∫Û‘Ÿ ‘°£");
+    return errorResponse(429, "rate_limited");
   }
 
   // ---- Validate token ----
@@ -88,20 +95,20 @@ serve(async (req) => {
     .from("student_report_tokens")
     .select("*")
     .eq("token_hash", hash)
-    .single();
+    .maybeSingle();
 
   if (tokenErr || !tokenRow) {
-    return errorResponse(403);
+    return errorResponse(403, "invalid");
   }
 
   // Check revoked
   if (tokenRow.is_revoked) {
-    return errorResponse(403);
+    return errorResponse(403, "revoked");
   }
 
-  // Check expiry
+  // Check expiry (null expires_at = permanent, never expires)
   if (tokenRow.expires_at && new Date(tokenRow.expires_at) < new Date()) {
-    return errorResponse(403);
+    return errorResponse(403, "expired");
   }
 
   const { class_name, student_name } = tokenRow;
@@ -114,12 +121,17 @@ serve(async (req) => {
     .eq("student_name", student_name)
     .maybeSingle();
 
-  const totalHours = enrRow?.total_hours || 0;
-  const validDays = enrRow?.valid_days || 0;
-  const startDate = enrRow?.start_date || "";
-  const endDate = enrRow?.end_date || "";
-  const beforeJune = enrRow?.before_june || 0;
-  const isDisciple = enrRow?.is_disciple || false;
+  if (!enrRow) {
+    // Token is valid but enrollment record missing
+    return errorResponse(404, "not_found");
+  }
+
+  const totalHours = enrRow.total_hours || 0;
+  const validDays = enrRow.valid_days || 0;
+  const startDate = enrRow.start_date || "";
+  const endDate = enrRow.end_date || "";
+  const beforeJune = enrRow.before_june || 0;
+  const isDisciple = enrRow.is_disciple || false;
 
   // ---- Fetch attendance records for this student (single query) ----
   const { data: attRows } = await supabase
