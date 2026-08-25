@@ -123,7 +123,10 @@ async function loadReport() {
   try {
     const res = await fetch(EDGE_FN_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer sb_publishable_RJbXFWVO0UAsslybWKj1Ig_uRyi3dj1'
+      },
       body: JSON.stringify({ hash: tokenHash }),
     });
     if (!res.ok) { showError(); return; }
