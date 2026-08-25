@@ -599,20 +599,20 @@ const ATTENDANCE_SCHEDULE = [
   { dow: 5, time: '10:30-11:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
   { dow: 5, time: '15:00-16:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
   { dow: 5, time: '16:00-17:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  // 周六（与周二至周五相同模式：所有班级、师父灵活选择）
-  { dow: 6, time: '09:30-10:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  { dow: 6, time: '10:30-11:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  { dow: 6, time: '15:00-16:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  { dow: 6, time: '16:00-17:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  { dow: 6, time: '17:20-18:20', timeLabel: '晚上', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  { dow: 6, time: '18:20-19:20', timeLabel: '晚上', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  // 周日（与周二至周五相同模式：所有班级、师父灵活选择）
-  { dow: 0, time: '09:30-10:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  { dow: 0, time: '10:30-11:30', timeLabel: '上午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  { dow: 0, time: '15:00-16:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  { dow: 0, time: '16:00-17:00', timeLabel: '下午', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  { dow: 0, time: '17:20-18:20', timeLabel: '晚上', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
-  { dow: 0, time: '18:20-19:20', timeLabel: '晚上', classes: ['少林一班','少林二班','少林三四班'], teacher: '师父轮课' },
+  // 周六
+  { dow: 6, time: '09:30-10:30', timeLabel: '上午', classes: ['少林二班'], teacher: '延杉师父' },
+  { dow: 6, time: '10:30-11:30', timeLabel: '上午', classes: ['少林二班'], teacher: '延杉师父' },
+  { dow: 6, time: '15:00-16:00', timeLabel: '下午', classes: ['少林三四班'], teacher: '恒福师父、恒瑞师父' },
+  { dow: 6, time: '16:00-17:00', timeLabel: '下午', classes: ['少林三四班'], teacher: '恒福师父、恒瑞师父' },
+  { dow: 6, time: '17:20-18:20', timeLabel: '晚上', classes: ['少林一班'], teacher: '延杉师父' },
+  { dow: 6, time: '18:20-19:20', timeLabel: '晚上', classes: ['少林一班'], teacher: '延杉师父' },
+  // 周日
+  { dow: 0, time: '09:30-10:30', timeLabel: '上午', classes: ['少林二班'], teacher: '延杉师父' },
+  { dow: 0, time: '10:30-11:30', timeLabel: '上午', classes: ['少林二班'], teacher: '延杉师父' },
+  { dow: 0, time: '15:00-16:00', timeLabel: '下午', classes: ['少林三四班'], teacher: '恒福师父、恒瑞师父' },
+  { dow: 0, time: '16:00-17:00', timeLabel: '下午', classes: ['少林三四班'], teacher: '恒福师父、恒瑞师父' },
+  { dow: 0, time: '17:20-18:20', timeLabel: '晚上', classes: ['少林一班'], teacher: '延杉师父' },
+  { dow: 0, time: '18:20-19:20', timeLabel: '晚上', classes: ['少林一班'], teacher: '延杉师父' },
 ];
 
 // ===================== Data =====================
@@ -1478,10 +1478,10 @@ function renderAttendanceTable() {
     const dayClass = dow === 5 ? 'day-fri' : dow === 6 ? 'day-sat' : 'day-sun';
     const dateParts = date.split('-');
     const dateDisplay = `${parseInt(dateParts[1])}/${parseInt(dateParts[2])}`;
-    const isRotatingDay = [0,2,3,4,5,6].includes(dow);
+    const isRotatingDay = [2,3,4,5].includes(dow);
 
     if (isRotatingDay) {
-      // Rotating day (Tue-Fri, Sat, Sun): group by time slot, one row per time
+      // Rotating day (Tue-Fri): group by time slot, one row per time
       const timeGroups = {};
       const timeOrder = [];
       daySessions.forEach(s => {
@@ -1609,7 +1609,7 @@ function renderSummary(sessions) {
 
 // ===================== Attendance Modal =====================
 function showAttendanceModal(date, time, className, teacher, dow, isCombined) {
-  const isRotatingDay = [0,2,3,4,5,6].includes(dow);
+  const isRotatingDay = [2,3,4,5].includes(dow);
   // On rotating days with isCombined, show all 3 classes' students
   const classesToShow = (isCombined && isRotatingDay)
     ? ['少林一班','少林二班','少林三四班']
@@ -1759,7 +1759,7 @@ function selectNone(btn) {
 }
 
 function saveAttendance(date, time, className, dow, btn, isCombined) {
-  const isRotatingDay = [0,2,3,4,5,6].includes(dow);
+  const isRotatingDay = [2,3,4,5].includes(dow);
 
   // Get chosen teacher (rotating days only)
   let chosenTeacher = '';
