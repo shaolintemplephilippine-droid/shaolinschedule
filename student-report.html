@@ -48,6 +48,9 @@
     .error-box .icon{font-size:48px;margin-bottom:16px}
     .error-box h2{font-size:18px;color:var(--ink);margin-bottom:8px}
     .error-box p{font-size:14px;max-width:400px;margin:0 auto}
+    .en{display:block;color:var(--muted);font-size:.82em;font-weight:400;margin-top:2px;font-style:normal}
+    .stat .en{font-size:.72em;margin-top:3px}
+    .info .en{font-size:.85em;margin-top:1px}
     .hidden{display:none}
     @media(max-width:520px){.shell{padding:12px 10px 30px}.hero{padding:15px 0}.hero h1{font-size:21px}.summary .stat{padding:14px 5px}.stat b{font-size:23px}.details{padding:16px 13px}.card-head{padding:16px 14px}.info{grid-template-columns:1fr}.info div:nth-last-child(2){border-bottom:1px solid var(--line)}.record{grid-template-columns:86px 1fr auto}.actions{padding:0 13px 16px}}
     @media print{body{background:#fff}.shell{max-width:none;padding:0}.hero,.actions,.foot,.privacy{display:none}.card{border:0;box-shadow:none;border-radius:0}.hidden{display:none!important}}
@@ -55,132 +58,91 @@
 </head>
 <body>
 <main class="shell">
-  <header class="hero"><div class="seal">少</div><h1 id="iTitle">少林文化中心 · 学员课时报告</h1><p id="iSubtitle" style="margin:4px 0 0;color:var(--muted);font-size:13px">Shaolin Cultural Center · Student Report</p></header>
-  <div class="privacy">🔒 <span id="iPrivacy">此链接仅供本人查看，请勿转发给他人。<br>This link is for personal use only. Do not share with others.</span></div>
+  <header class="hero"><div class="seal">少</div><h1 id="iTitle"></h1></header>
+  <div class="privacy">🔒 <span id="iPrivacy"></span></div>
 
-  <div id="loading" style="text-align:center;padding:60px;color:var(--muted)"><span id="iLoading">正在加载报告… Loading…</span></div>
+  <div id="loading" style="text-align:center;padding:60px;color:var(--muted)"><span id="iLoading"></span></div>
 
   <div id="error" class="error-box hidden">
     <div class="icon" id="errorIcon">🔗</div>
-    <h2 id="errorTitle">链接无效或已过期</h2>
-    <p id="errorDesc">请联系管理员获取新的专属报告链接。</p>
+    <h2 id="errorTitle"></h2>
+    <p id="errorDesc"></p>
   </div>
 
   <section id="report" class="card hidden" aria-live="polite">
     <div class="card-head">
       <div><div id="rName" class="student-name"></div><div id="rClass" class="meta"></div></div>
-      <div class="stamp"><b id="iStampTitle">课时明细</b><span id="rDate"></span></div>
+      <div class="stamp"><b id="iStampTitle"></b><span id="rDate"></span></div>
     </div>
     <div class="summary">
-      <div class="stat"><b id="rTotal"></b><small id="iLblTotal">总课时</small></div>
-      <div class="stat"><b id="rUsed"></b><small id="iLblUsed">已消课时</small></div>
-      <div class="stat"><b id="rRemain"></b><small id="iLblRemain">剩余课时</small></div>
+      <div class="stat"><b id="rTotal"></b><small id="iLblTotal"></small></div>
+      <div class="stat"><b id="rUsed"></b><small id="iLblUsed"></small></div>
+      <div class="stat"><b id="rRemain"></b><small id="iLblRemain"></small></div>
     </div>
     <div class="details">
-      <h2 id="iDetailsTitle">课时详情</h2>
+      <h2 id="iDetailsTitle"></h2>
       <div class="info">
-        <div><span id="iLblStart">生效日期</span><b id="rStart"></b></div>
-        <div><span id="iLblEnd">到期日期</span><b id="rEnd"></b></div>
-        <div><span id="iLblValidDays">有效期天数</span><b id="rValidDays"></b></div>
-        <div><span id="iLblDaysLeft">剩余天数</span><b id="rDaysLeft"></b></div>
+        <div><span id="iLblStart"></span><b id="rStart"></b></div>
+        <div><span id="iLblEnd"></span><b id="rEnd"></b></div>
+        <div><span id="iLblValidDays"></span><b id="rValidDays"></b></div>
+        <div><span id="iLblDaysLeft"></span><b id="rDaysLeft"></b></div>
       </div>
-      <div class="att-title" id="rMonthTitle">当月考勤</div>
+      <div class="att-title" id="rMonthTitle"></div>
       <div id="rRecords" class="records"></div>
     </div>
     <div class="actions">
-      <button id="iBtnPrint" onclick="window.print()">打印／保存为图片</button>
-      <button id="iBtnShare" class="secondary" onclick="shareReport()">分享明细</button>
+      <button id="iBtnPrint" onclick="window.print()"></button>
+      <button id="iBtnShare" class="secondary" onclick="shareReport()"></button>
     </div>
   </section>
 
-  <p class="foot" id="iFoot">课时以中心考勤记录为准。如有疑问，请联系您的教练。<br>Attendance is based on the center's official records. Contact your instructor for questions.</p>
+  <p class="foot" id="iFoot"></p>
 </main>
 
 <script>
-const EDGE_FN_URL = 'https://wftnszpquwlqmgcevkyj.supabase.co/functions/v1/student-report';
-let reportData = null;
-var _lang = (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+var EDGE_FN_URL = 'https://wftnszpquwlqmgcevkyj.supabase.co/functions/v1/student-report';
+var reportData = null;
 
-var I18N = {
-  zh: {
-    title: '少林文化中心 · 学员课时报告', subtitle: '',
-    privacy: '此链接仅供本人查看，请勿转发给他人。',
-    loading: '正在加载报告…',
-    stampTitle: '课时明细', updated: '更新于 ',
-    lblTotal: '总课时', lblUsed: '已消课时', lblRemain: '剩余课时',
-    detailsTitle: '课时详情',
-    lblStart: '生效日期', lblEnd: '到期日期', lblValidDays: '有效期天数', lblDaysLeft: '剩余天数',
-    days: ' 天', overdue: '已超期 ', noLimit: '不限', disciple: '弟子班',
-    emptyRecords: '本月暂无考勤记录', attendance: ' 次', recordUnit: '出勤 · 1 课时',
-    btnPrint: '打印／保存为图片', btnShare: '分享明细',
-    foot: '课时以中心考勤记录为准。如有疑问，请联系您的教练。',
-    monthFmt: function(m) { return m.replace('-',' 年 ') + ' 月'; },
-    errors: {
-      invalid:     { icon: '🔗', title: '查询链接无效', desc: '无法识别此查询链接，请联系管理员获取新的专属链接。' },
-      revoked:     { icon: '🚫', title: '查询链接已失效', desc: '此链接已被管理员停用，请联系管理员获取新链接。' },
-      expired:     { icon: '⏰', title: '查询链接已过期', desc: '此链接已超过有效期，请联系管理员获取新链接。' },
-      not_found:   { icon: '📋', title: '无法找到对应学员', desc: '系统中未找到该链接对应的学员信息，请联系管理员。' },
-      rate_limited:{ icon: '⏳', title: '访问过于频繁', desc: '请稍后再试。' },
-      network:     { icon: '⚠️', title: '系统暂时无法读取学员信息', desc: '请检查网络连接后刷新页面重试。' }
-    }
-  },
-  en: {
-    title: 'Shaolin Cultural Center', subtitle: 'Student Attendance Report',
-    privacy: 'This link is for personal use only. Do not share with others.',
-    loading: 'Loading report…',
-    stampTitle: 'Report', updated: 'Updated ',
-    lblTotal: 'Total Hours', lblUsed: 'Used Hours', lblRemain: 'Remaining',
-    detailsTitle: 'Enrollment Details',
-    lblStart: 'Start Date', lblEnd: 'End Date', lblValidDays: 'Valid Days', lblDaysLeft: 'Days Left',
-    days: ' days', overdue: 'Overdue by ', noLimit: 'Unlimited', disciple: 'Disciple',
-    emptyRecords: 'No attendance records this month', attendance: ' sessions', recordUnit: 'Present · 1 hour',
-    btnPrint: 'Print / Save as Image', btnShare: 'Share Details',
-    foot: 'Attendance is based on the center\'s official records. Contact your instructor for questions.',
-    monthFmt: function(m) {
-      var p = m.split('-');
-      var names = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
-      return names[+p[1]] + ' ' + p[0];
-    },
-    errors: {
-      invalid:     { icon: '🔗', title: 'Invalid Link', desc: 'This link cannot be recognized. Please contact the admin for a new link.' },
-      revoked:     { icon: '🚫', title: 'Link Deactivated', desc: 'This link has been deactivated by the admin. Please contact the admin for a new link.' },
-      expired:     { icon: '⏰', title: 'Link Expired', desc: 'This link has expired. Please contact the admin for a new link.' },
-      not_found:   { icon: '📋', title: 'Student Not Found', desc: 'No student record found for this link. Please contact the admin.' },
-      rate_limited:{ icon: '⏳', title: 'Too Many Requests', desc: 'Please try again later.' },
-      network:     { icon: '⚠️', title: 'Unable to Load Report', desc: 'Please check your network connection and refresh the page.' }
-    }
-  }
-};
-var T = I18N[_lang];
+function bi(cn, en) { return cn + '<span class="en">' + en + '</span>'; }
+function setBi(id, cn, en) { var e = document.getElementById(id); if (e) e.innerHTML = bi(cn, en); }
 
 function applyLang() {
-  document.documentElement.lang = _lang === 'zh' ? 'zh-CN' : 'en';
-  document.title = T.title + (_lang === 'en' ? ' | Student Report' : '');
-  var el = function(id) { return document.getElementById(id); };
-  el('iTitle').textContent = T.title;
-  el('iSubtitle').textContent = T.subtitle;
-  el('iSubtitle').style.display = T.subtitle ? '' : 'none';
-  el('iPrivacy').textContent = T.privacy;
-  el('iLoading').textContent = T.loading;
-  el('iStampTitle').textContent = T.stampTitle;
-  el('iLblTotal').textContent = T.lblTotal;
-  el('iLblUsed').textContent = T.lblUsed;
-  el('iLblRemain').textContent = T.lblRemain;
-  el('iDetailsTitle').textContent = T.detailsTitle;
-  el('iLblStart').textContent = T.lblStart;
-  el('iLblEnd').textContent = T.lblEnd;
-  el('iLblValidDays').textContent = T.lblValidDays;
-  el('iLblDaysLeft').textContent = T.lblDaysLeft;
-  el('iBtnPrint').textContent = T.btnPrint;
-  el('iBtnShare').textContent = T.btnShare;
-  el('iFoot').textContent = T.foot;
+  document.title = '少林文化中心 | Shaolin Cultural Center';
+  setBi('iTitle', '少林文化中心 · 学员课时报告', 'Shaolin Cultural Center · Student Report');
+  setBi('iPrivacy', '此链接仅供本人查看，请勿转发给他人。', 'This link is for personal use only. Do not share with others.');
+  setBi('iLoading', '正在加载报告…', 'Loading report…');
+  setBi('iStampTitle', '课时明细', 'Class Details');
+  setBi('iLblTotal', '总课时', 'Total Hours');
+  setBi('iLblUsed', '已消课时', 'Used Hours');
+  setBi('iLblRemain', '剩余课时', 'Remaining');
+  setBi('iDetailsTitle', '课时详情', 'Enrollment Details');
+  setBi('iLblStart', '生效日期', 'Start Date');
+  setBi('iLblEnd', '到期日期', 'End Date');
+  setBi('iLblValidDays', '有效期天数', 'Valid Days');
+  setBi('iLblDaysLeft', '剩余天数', 'Days Left');
+  setBi('iBtnPrint', '打印／保存为图片', 'Print / Save as Image');
+  setBi('iBtnShare', '分享明细', 'Share Details');
+  setBi('iFoot', '课时以中心考勤记录为准。如有疑问，请联系您的教练。', 'Attendance is based on the center\'s official records. Contact your instructor for questions.');
 }
 applyLang();
 
-function fmtDate(dateStr) {
-  if (!dateStr) return '-';
-  var loc = _lang === 'zh' ? 'zh-CN' : 'en-US';
-  return new Intl.DateTimeFormat(loc, {year:'numeric',month:'long',day:'numeric'}).format(new Date(dateStr+'T12:00:00'));
+var ERR = {
+  invalid:     { icon:'🔗', cn:'查询链接无效', en:'Invalid Link', cnD:'无法识别此查询链接，请联系管理员获取新的专属链接。', enD:'This link cannot be recognized. Please contact the admin for a new link.' },
+  revoked:     { icon:'🚫', cn:'查询链接已失效', en:'Link Deactivated', cnD:'此链接已被管理员停用，请联系管理员获取新链接。', enD:'This link has been deactivated. Please contact the admin for a new link.' },
+  expired:     { icon:'⏰', cn:'查询链接已过期', en:'Link Expired', cnD:'此链接已超过有效期，请联系管理员获取新链接。', enD:'This link has expired. Please contact the admin for a new link.' },
+  not_found:   { icon:'📋', cn:'无法找到对应学员', en:'Student Not Found', cnD:'系统中未找到该链接对应的学员信息，请联系管理员。', enD:'No student record found. Please contact the admin.' },
+  rate_limited:{ icon:'⏳', cn:'访问过于频繁', en:'Too Many Requests', cnD:'请稍后再试。', enD:'Please try again later.' },
+  network:     { icon:'⚠️', cn:'系统暂时无法读取学员信息', en:'Unable to Load', cnD:'请检查网络连接后刷新页面重试。', enD:'Please check your connection and refresh the page.' }
+};
+
+function fmtDate(s) {
+  if (!s) return '-';
+  return new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'long',day:'numeric'}).format(new Date(s+'T12:00:00'));
+}
+function fmtMonth(m) {
+  var p = m.split('-');
+  var en = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return p[0] + '年' + (+p[1]) + '月 / ' + en[+p[1]] + ' ' + p[0];
 }
 
 async function loadReport() {
@@ -191,24 +153,23 @@ async function loadReport() {
   try {
     var res = await fetch(EDGE_FN_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer sb_publishable_RJbXFWVO0UAsslybWKj1Ig_uRyi3dj1' },
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer sb_publishable_RJbXFWVO0UAsslybWKj1Ig_uRyi3dj1' },
       body: JSON.stringify({ token: token })
     });
     if (!res.ok) {
-      var errorCode = 'invalid';
-      try { var errData = await res.json(); errorCode = errData.errorCode || 'invalid'; } catch(e) {}
-      showError(errorCode); return;
+      var code = 'invalid';
+      try { var d = await res.json(); code = d.errorCode || 'invalid'; } catch(e) {}
+      showError(code); return;
     }
-    var data = await res.json();
-    renderReport(data);
+    renderReport(await res.json());
   } catch(e) { console.error(e); showError('network'); }
 }
 
 function showError(code) {
-  var msg = (T.errors[code] || T.errors.invalid);
-  document.getElementById('errorIcon').textContent = msg.icon;
-  document.getElementById('errorTitle').textContent = msg.title;
-  document.getElementById('errorDesc').textContent = msg.desc;
+  var m = ERR[code] || ERR.invalid;
+  document.getElementById('errorIcon').textContent = m.icon;
+  setBi('errorTitle', m.cn, m.en);
+  setBi('errorDesc', m.cnD, m.enD);
   document.getElementById('loading').classList.add('hidden');
   document.getElementById('error').classList.remove('hidden');
 }
@@ -219,31 +180,28 @@ function renderReport(d) {
   document.getElementById('report').classList.remove('hidden');
   var now = new Date();
   document.getElementById('rName').textContent = d.name;
-  var clsText = d.className;
-  if (d.isDisciple) clsText += _lang === 'zh' ? ' · 弟子班' : ' · Disciple';
-  document.getElementById('rClass').textContent = clsText;
-  document.getElementById('rDate').textContent = T.updated + fmtDate(now.toISOString().slice(0,10));
-  document.getElementById('rTotal').textContent = d.isDisciple ? T.noLimit : d.totalHours;
+  document.getElementById('rClass').textContent = d.className + (d.isDisciple ? ' · 弟子班 / Disciple' : '');
+  document.getElementById('rDate').innerHTML = bi('更新于 ' + fmtDate(now.toISOString().slice(0,10)), 'Updated ' + fmtDate(now.toISOString().slice(0,10)));
+  document.getElementById('rTotal').textContent = d.isDisciple ? '不限' : d.totalHours;
   document.getElementById('rUsed').textContent = d.usedHours;
   document.getElementById('rRemain').textContent = d.isDisciple ? '∞' : d.remainingHours;
   document.getElementById('rStart').textContent = fmtDate(d.startDate);
   document.getElementById('rEnd').textContent = fmtDate(d.endDate);
-  document.getElementById('rValidDays').textContent = d.validDays ? d.validDays + T.days : '-';
+  document.getElementById('rValidDays').textContent = d.validDays ? d.validDays + ' 天 / days' : '-';
   if (d.daysLeft !== null) {
     var el = document.getElementById('rDaysLeft');
-    if (d.daysLeft < 0) { el.textContent = T.overdue + Math.abs(d.daysLeft) + T.days; el.className = 'caution'; }
-    else { el.textContent = d.daysLeft + T.days; el.className = d.daysLeft <= 14 ? 'caution' : 'good'; }
+    if (d.daysLeft < 0) { el.textContent = '已超期 ' + Math.abs(d.daysLeft) + ' 天 / Overdue ' + Math.abs(d.daysLeft) + ' days'; el.className = 'caution'; }
+    else { el.textContent = d.daysLeft + ' 天 / days'; el.className = d.daysLeft <= 14 ? 'caution' : 'good'; }
   } else { document.getElementById('rDaysLeft').textContent = '-'; }
   var records = d.monthlyAttendance || [];
-  var monthLabel = T.monthFmt(d.currentMonth || '');
-  document.getElementById('rMonthTitle').textContent = monthLabel + (_lang === 'zh' ? '考勤（' : ' Attendance (') + records.length + (_lang === 'zh' ? ' 次）' : ' sessions)');
+  document.getElementById('rMonthTitle').innerHTML = bi(fmtMonth(d.currentMonth||'') + '考勤（' + records.length + ' 次）', fmtMonth(d.currentMonth||'') + ' Attendance (' + records.length + ' sessions)');
   if (records.length === 0) {
-    document.getElementById('rRecords').innerHTML = '<div class="empty">' + T.emptyRecords + '</div>';
+    document.getElementById('rRecords').innerHTML = '<div class="empty">' + bi('本月暂无考勤记录','No attendance records this month') + '</div>';
     return;
   }
   var html = '';
   records.forEach(function(r) {
-    html += '<div class="record"><time>' + fmtDate(r.date) + '</time><span>' + r.time + (r.teacher ? '<br><small style="color:var(--muted)">' + r.teacher + '</small>' : '') + '</span><em>' + T.recordUnit + '</em></div>';
+    html += '<div class="record"><time>' + fmtDate(r.date) + '</time><span>' + r.time + (r.teacher ? '<br><small style="color:var(--muted)">' + r.teacher + '</small>' : '') + '</span><em>' + bi('出勤 · 1 课时','Present · 1 hour') + '</em></div>';
   });
   document.getElementById('rRecords').innerHTML = html;
 }
@@ -251,14 +209,17 @@ function renderReport(d) {
 function shareReport() {
   if (!reportData) return;
   var d = reportData;
-  var text;
-  if (_lang === 'zh') {
-    text = '【少林文化中心 · 课时明细】\n学员：' + d.name + '\n班级：' + d.className + '\n总课时：' + (d.isDisciple ? '不限（弟子班）' : d.totalHours) + '\n已消课时：' + d.usedHours + '\n剩余课时：' + (d.isDisciple ? '不限' : d.remainingHours) + '\n生效日期：' + (d.startDate || '-') + '\n到期日期：' + (d.endDate || '-') + '\n剩余天数：' + (d.daysLeft !== null ? d.daysLeft + ' 天' : '-');
-  } else {
-    text = '[Shaolin Cultural Center - Attendance Report]\nStudent: ' + d.name + '\nClass: ' + d.className + '\nTotal Hours: ' + (d.isDisciple ? 'Unlimited (Disciple)' : d.totalHours) + '\nUsed Hours: ' + d.usedHours + '\nRemaining: ' + (d.isDisciple ? 'Unlimited' : d.remainingHours) + '\nStart Date: ' + (d.startDate || '-') + '\nEnd Date: ' + (d.endDate || '-') + '\nDays Left: ' + (d.daysLeft !== null ? d.daysLeft + ' days' : '-');
-  }
-  if (navigator.share) { navigator.share({title: _lang === 'zh' ? '学员课时明细' : 'Student Report', text: text}).catch(function(){}); }
-  else { navigator.clipboard.writeText(text).then(function(){alert(_lang === 'zh' ? '课时明细已复制，可直接发送给学员。' : 'Report copied to clipboard. You can share it with the student.');}).catch(function(){prompt(_lang === 'zh' ? '请复制以下内容：' : 'Please copy the following:', text)}); }
+  var text = '[少林文化中心 Shaolin Cultural Center]\n'
+    + '学员 Student: ' + d.name + '\n'
+    + '班级 Class: ' + d.className + '\n'
+    + '总课时 Total: ' + (d.isDisciple ? '不限 Unlimited' : d.totalHours) + '\n'
+    + '已消课时 Used: ' + d.usedHours + '\n'
+    + '剩余课时 Remaining: ' + (d.isDisciple ? '不限 Unlimited' : d.remainingHours) + '\n'
+    + '生效日期 Start: ' + (d.startDate || '-') + '\n'
+    + '到期日期 End: ' + (d.endDate || '-') + '\n'
+    + '剩余天数 Days Left: ' + (d.daysLeft !== null ? d.daysLeft + ' days' : '-');
+  if (navigator.share) { navigator.share({title:'学员课时报告 / Student Report',text:text}).catch(function(){}); }
+  else { navigator.clipboard.writeText(text).then(function(){alert('已复制 / Copied to clipboard');}).catch(function(){prompt('请复制 / Please copy:',text)}); }
 }
 
 loadReport();
