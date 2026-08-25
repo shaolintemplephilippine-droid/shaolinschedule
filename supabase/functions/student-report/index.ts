@@ -176,6 +176,17 @@ serve(async (req) => {
   const curMonthRecords = studentRecords.filter(r => r.date.startsWith(curMonth))
     .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
 
+  // Yearly consumed: attendance records in current calendar year + beforeJune
+  const curYear = now.getFullYear();
+  let yearlyFromAttendance = 0;
+  for (const r of studentRecords) {
+    if (parseInt(r.date.split("-")[0]) === curYear) yearlyFromAttendance++;
+  }
+  const yearlyUsedHours = beforeJune + yearlyFromAttendance;
+
+  // Current month consumed count
+  const currentMonthUsed = curMonthRecords.length;
+
   // ---- Build response ----
   return new Response(
     JSON.stringify({
@@ -189,6 +200,8 @@ serve(async (req) => {
       endDate,
       validDays: validDaysCalc ?? validDays,
       daysLeft,
+      yearlyUsedHours,
+      currentMonthUsed,
       currentMonth: curMonth,
       monthlyAttendance: curMonthRecords.map(r => ({
         date: r.date,

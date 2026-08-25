@@ -22,6 +22,9 @@
     .stamp{text-align:right;color:var(--muted);font-size:12px;white-space:nowrap}
     .stamp b{display:block;color:var(--brand);font-size:15px}
     .summary{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line)}
+    .summary2{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+    .summary2 .stat{border-right:1px solid var(--line)}
+    .summary2 .stat:last-child{border:0}
     .stat{padding:18px 11px;text-align:center;border-right:1px solid var(--line)}
     .stat:last-child{border:0}
     .stat b{display:block;font-size:27px;color:var(--brand);line-height:1.1}
@@ -80,6 +83,10 @@
       <div class="stat"><b id="rUsed"></b><small id="iLblUsed"></small></div>
       <div class="stat"><b id="rRemain"></b><small id="iLblRemain"></small></div>
     </div>
+    <div class="summary2">
+      <div class="stat"><b id="rYearlyUsed"></b><small id="iLblYearlyUsed"></small></div>
+      <div class="stat"><b id="rMonthUsed"></b><small id="iLblMonthUsed"></small></div>
+    </div>
     <div class="details">
       <h2 id="iDetailsTitle"></h2>
       <div class="info">
@@ -116,6 +123,8 @@ function applyLang() {
   setBi('iLblTotal', '总课时', 'Total Hours');
   setBi('iLblUsed', '已消课时', 'Used Hours');
   setBi('iLblRemain', '剩余课时', 'Remaining');
+  setBi('iLblYearlyUsed', '本年度总消课数', 'Yearly Consumed');
+  setBi('iLblMonthUsed', '本月已消课数', 'This Month');
   setBi('iDetailsTitle', '课时详情', 'Enrollment Details');
   setBi('iLblStart', '生效日期', 'Start Date');
   setBi('iLblEnd', '到期日期', 'End Date');
@@ -186,6 +195,8 @@ function renderReport(d) {
   document.getElementById('rTotal').textContent = d.isDisciple ? '不限' : d.totalHours;
   document.getElementById('rUsed').textContent = d.usedHours;
   document.getElementById('rRemain').textContent = d.isDisciple ? '∞' : d.remainingHours;
+  document.getElementById('rYearlyUsed').textContent = d.yearlyUsedHours ?? d.usedHours;
+  document.getElementById('rMonthUsed').textContent = d.currentMonthUsed ?? 0;
   document.getElementById('rStart').textContent = fmtDate(d.startDate);
   document.getElementById('rEnd').textContent = fmtDate(d.endDate);
   document.getElementById('rValidDays').textContent = d.validDays ? d.validDays + ' 天 / days' : '-';
@@ -215,6 +226,8 @@ function shareReport() {
     + '班级 Class: ' + d.className + '\n'
     + '总课时 Total: ' + (d.isDisciple ? '不限 Unlimited' : d.totalHours) + '\n'
     + '已消课时 Used: ' + d.usedHours + '\n'
+    + '本年度总消课 Yearly: ' + (d.yearlyUsedHours ?? d.usedHours) + '\n'
+    + '本月消课 This Month: ' + (d.currentMonthUsed ?? 0) + '\n'
     + '剩余课时 Remaining: ' + (d.isDisciple ? '不限 Unlimited' : d.remainingHours) + '\n'
     + '生效日期 Start: ' + (d.startDate || '-') + '\n'
     + '到期日期 End: ' + (d.endDate || '-') + '\n'
