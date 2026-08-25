@@ -1,3 +1,4 @@
 .vercel-tmp/
+supabase/.temp/
 *.log
 *.pid
