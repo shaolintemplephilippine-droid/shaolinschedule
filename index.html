@@ -122,7 +122,7 @@ body { font-family:"Microsoft YaHei","Segoe UI",sans-serif; background:var(--bg)
 .btn-gold { background:var(--gold); color:#fff; }
 .btn-gold:hover { background:#b8860b; }
 
-.table-wrap { overflow-x:auto; }
+.table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 table.data-table { width:100%; border-collapse:collapse; font-size:13px; }
 table.data-table th { background:#7f1d1d; color:#fff; padding:10px 8px; text-align:center; font-weight:600; white-space:nowrap; }
 table.data-table td { padding:10px 8px; border-bottom:1px solid var(--border); text-align:center; }
@@ -230,11 +230,26 @@ table.data-table .day-sun { color:var(--purple); font-weight:600; }
 .legend-item { display:flex; align-items:center; gap:6px; }
 .legend-dot { width:12px; height:12px; border-radius:50%; }
 
+/* ===== Mobile responsive ===== */
+/* 手机端：头部改为普通流式布局（不再吸顶，避免占据大半屏幕），
+   标签页改为 4 列网格防止横向溢出，表格改为横向滚动 */
 @media(max-width:768px) {
   .container { padding:12px; }
-  .weekly-table { font-size:12px; }
+  .header { position:static; padding:14px 16px; }
+  .header h1 { font-size:18px; }
+  .header p { font-size:11px; }
+  .tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-top:12px; }
+  .tab { padding:8px 2px; font-size:12px; text-align:center; border-radius:6px; white-space:nowrap; }
+  .data-sync-bar { flex-wrap:wrap; }
+  .auth-bar { flex-wrap:wrap; font-size:11px; }
+  .card { padding:14px; }
+  .card-header { flex-wrap:wrap; gap:8px; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .weekly-table { font-size:12px; min-width:680px; }
   .weekly-table .time-col { width:80px; }
+  table.data-table { min-width:640px; }
   .cal-grid { grid-template-columns:1fr; }
+  .toast { left:12px; right:12px; bottom:12px; text-align:center; }
 }
 /* ===== Login Overlay ===== */
 #login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#1e293b 0%,#334155 100%);z-index:10000;display:flex;align-items:center;justify-content:center}
