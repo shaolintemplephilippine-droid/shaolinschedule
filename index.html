@@ -299,6 +299,8 @@ table.data-table .day-sun { color:var(--purple); font-weight:600; }
   </div>
   <div class="data-sync-bar">
     <span style="font-size:12px;color:var(--text2)">💾 数据同步：</span>
+    <button class="btn btn-outline btn-sm" onclick="syncToCloud()">☁️ 同步到云端</button>
+    <button class="btn btn-outline btn-sm" onclick="syncFromCloud()">🔄 从云端刷新</button>
     <button class="btn btn-outline btn-sm" onclick="exportAllData()">⬆️ 导出数据</button>
     <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFileInput').click()">⬇️ 导入数据</button>
     <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importAllData(event)">
@@ -2688,6 +2690,47 @@ function exportAllData() {
   a.click();
   URL.revokeObjectURL(url);
   toast('数据已导出，请将文件发送到其他设备');
+}
+
+async function syncToCloud() {
+  if (!_supabase) { toast('Supabase 未连接，无法同步'); return; }
+  const session = await _supabase.auth.getSession().then(r => r.data.session).catch(() => null);
+  if (!session) { toast('请先登录后再同步到云端'); return; }
+  toast('正在同步到云端...');
+  try {
+    saveData();
+    await _syncCloud();
+    toast('已同步到云端');
+  } catch (e) {
+    console.error('[Sync] upload failed:', e);
+    toast('云端同步失败：' + (e.message || '未知错误'));
+  }
+}
+
+async function syncFromCloud() {
+  if (!_supabase) { toast('Supabase 未连接，无法刷新'); return; }
+  const session = await _supabase.auth.getSession().then(r => r.data.session).catch(() => null);
+  if (!session) { toast('请先登录后再从云端刷新'); return; }
+  toast('正在从云端刷新...');
+  try {
+    const fresh = await loadDataAsync();
+    db = fresh;
+    if (db.sourceVersion !== SOURCE_VERSION) {
+      runMigrations();
+      saveData();
+    } else if (runLightNormalizations()) {
+      saveData();
+    }
+    updateStats();
+    renderCalendars();
+    initMonthSelect();
+    renderRoster();
+    renderEnrollmentTable();
+    toast('已从云端刷新');
+  } catch (e) {
+    console.error('[Sync] download failed:', e);
+    toast('云端刷新失败：' + (e.message || '未知错误'));
+  }
 }
 
 function importAllData(event) {
