@@ -294,6 +294,7 @@ table.data-table .day-sun { color:var(--purple); font-weight:600; }
   <div class="tabs">
     <button class="tab active" onclick="switchTab('schedule')">📅 功夫课表</button>
     <button class="tab" onclick="switchTab('attendance')">✅ 出勤统计</button>
+    <button class="tab" onclick="switchTab('weekly')">📝 周课总结</button>
     <button class="tab" onclick="switchTab('enrollment')">📊 报课统计</button>
     <button class="tab" onclick="switchTab('roster')">👥 学员管理</button>
   </div>
@@ -429,6 +430,31 @@ table.data-table .day-sun { color:var(--purple); font-weight:600; }
 
 </div>
 
+<!-- ==================== Tab 2.5: Weekly Summary ==================== -->
+<div class="section" id="sec-weekly">
+
+  <div class="card">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <h3>📝 周课总结</h3>
+        <div class="sub">按班级、按周记录训练内容与总结</div>
+      </div>
+      <button class="btn btn-primary" onclick="openWeeklySummaryModal()" style="white-space:nowrap">＋ 新增周总结</button>
+    </div>
+    <div id="weeklySummaryList"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>📋 说明</h3></div>
+    <div style="font-size:14px;line-height:1.8;color:var(--text2)">
+      <p>1. 每周可为一个班级添加一条周课总结。</p>
+      <p>2. 训练内容支持多选，总结术语可下拉选择或自定义。</p>
+      <p>3. 保存后自动同步到云端，学员可在专属链接中查看。</p>
+    </div>
+  </div>
+
+</div>
+
 <!-- ==================== Tab 3: Enrollment ==================== -->
 <div class="section" id="sec-enrollment">
 
@@ -523,6 +549,17 @@ const CLASS_INFO = {
 
 // 周二至周五轮课的师父
 const ROTATING_TEACHERS = ['延杉师父', '恒瑞师父', '恒福师父'];
+
+const WEEKLY_SUMMARY_AUTHORS = ['延杉师父', '恒瑞师父', '恒福师父'];
+const WEEKLY_SUMMARY_ITEMS = ['少林十三拳', '少林十三拳精要', '少林连环拳', '少林连环拳精要', '少林五形拳', '少林五形拳精要', '表演拳', '少林棍', '剑', '朴刀', '匕首'];
+const WEEKLY_SUMMARY_TEMPLATES = [
+  '本周以基本功巩固为主，学员们态度认真，进步明显。',
+  '本周重点复习套路动作，整体节奏较上周更加整齐。',
+  '本周加入新内容学习，学员们接受较快，仍需加强细节。',
+  '本周以对抗和力量训练为主，学员们体能有所提升。',
+  '本周进行阶段性总结，大部分学员已掌握本周训练要点。',
+  '本周学员出勤良好，课堂纪律和专注力均有提升。'
+];
 
 const STUDENT_DETAILS = {
   '恒贤-钟明洋': { gender: '男', birthYear: 2011 },
@@ -731,6 +768,7 @@ function loadData() {
     students: defaultStudents,
     attendance: {}, // key: "date|time|className" -> [student names]
     enrollment: {}, // key: "className|studentName" -> { totalHours, validDays, startDate, endDate, beforeJune }
+    weeklySummaries: {}, // key: "className|weekStart" -> { author, items[], summary }
     sourceVersion: SOURCE_VERSION,
   };
 }
@@ -742,14 +780,16 @@ async function loadDataAsync() {
   const session = await _supabase.auth.getSession().then(r => r.data.session).catch(() => null);
   if (session) {
     try {
-      const [{ data: stuRows, error: e1 }, { data: attRows, error: e2 }, { data: enrRows, error: e3 }] = await Promise.all([
+      const [{ data: stuRows, error: e1 }, { data: attRows, error: e2 }, { data: enrRows, error: e3 }, { data: wsRows, error: e4 }] = await Promise.all([
         _supabase.from('students').select('*').order('class_name').order('name'),
         _supabase.from('attendance_records').select('*').order('date'),
-        _supabase.from('enrollment').select('*')
+        _supabase.from('enrollment').select('*'),
+        _supabase.from('weekly_summaries').select('*').order('week_start')
       ]);
       if (e1) console.warn('[Supabase] students error:', e1.message);
       if (e2) console.warn('[Supabase] attendance error:', e2.message);
       if (e3) console.warn('[Supabase] enrollment error:', e3.message);
+      if (e4) console.warn('[Supabase] weekly summary error:', e4.message);
       const students = {};
       ['少林一班','少林二班','少林三四班'].forEach(c => { students[c] = []; });
       if (stuRows && stuRows.length > 0) {
@@ -773,14 +813,22 @@ async function loadDataAsync() {
           beforeJune: r.before_june||0, isDisciple: r.is_disciple||false
         };
       });
-      const hasCloud = (stuRows && stuRows.length > 0) || (attRows && attRows.length > 0) || (enrRows && enrRows.length > 0);
+      const weeklySummaries = {};
+      if (wsRows) wsRows.forEach(r => {
+        weeklySummaries[r.class_name+'|'+r.week_start] = {
+          author: r.author || '',
+          items: Array.isArray(r.content_items) ? r.content_items : [],
+          summary: r.summary_text || ''
+        };
+      });
+      const hasCloud = (stuRows && stuRows.length > 0) || (attRows && attRows.length > 0) || (enrRows && enrRows.length > 0) || (wsRows && wsRows.length > 0);
       if (hasCloud) {
         console.log('[Data] Loaded from Supabase');
-        return { students, attendance, enrollment, sourceVersion: SOURCE_VERSION, _migrated1hour: true };
+        return { students, attendance, enrollment, weeklySummaries, sourceVersion: SOURCE_VERSION, _migrated1hour: true };
       }
       // Cloud empty → migrate localStorage data to Supabase
       const local = loadData();
-      const hasLocal = Object.keys(local.attendance).length > 0 || Object.keys(local.enrollment).length > 0;
+      const hasLocal = Object.keys(local.attendance).length > 0 || Object.keys(local.enrollment).length > 0 || Object.keys(local.weeklySummaries || {}).length > 0;
       if (hasLocal) {
         console.log('[Data] Migrating localStorage to Supabase...');
         await syncAllToSupabase(local);
@@ -798,6 +846,7 @@ function saveData() {
   const toSave = {
     attendance: db.attendance || {},
     enrollment: db.enrollment || {},
+    weeklySummaries: db.weeklySummaries || {},
     sourceVersion: SOURCE_VERSION,
     _migrated1hour: db._migrated1hour || false,
   };
@@ -838,6 +887,16 @@ async function _syncCloud() {
       const { error: e3 } = await _supabase.from('students').upsert(stuRows, { onConflict: 'class_name,name' });
       if (e3) { console.error('[Supabase] students sync:', e3.message); toast('学员数据同步失败：' + e3.message); }
     }
+    // Sync weekly summaries
+    const wsRows = [];
+    Object.entries(db.weeklySummaries || {}).forEach(([key, rec]) => {
+      const p = key.split('|');
+      if (p.length === 2) wsRows.push({ class_name: p[0], week_start: p[1], author: rec.author || '', content_items: rec.items || [], summary_text: rec.summary || '' });
+    });
+    if (wsRows.length > 0) {
+      const { error: e4 } = await _supabase.from('weekly_summaries').upsert(wsRows, { onConflict: 'class_name,week_start' });
+      if (e4) { console.error('[Supabase] weekly summary sync:', e4.message); toast('周总结同步失败：' + e4.message); }
+    }
   } catch(e) { console.error('[Supabase] sync error:', e); toast('云端同步失败，请检查网络'); }
 }
 async function syncAllToSupabase(data) {
@@ -861,13 +920,19 @@ async function syncAllToSupabase(data) {
     });
     const stuRows = [...stuMap2.values()];
     if (stuRows.length > 0) await _supabase.from('students').upsert(stuRows, { onConflict: 'class_name,name' });
+    const wsRows = [];
+    Object.entries(data.weeklySummaries || {}).forEach(([key, rec]) => {
+      const p = key.split('|');
+      if (p.length === 2) wsRows.push({ class_name: p[0], week_start: p[1], author: rec.author || '', content_items: rec.items || [], summary_text: rec.summary || '' });
+    });
+    if (wsRows.length > 0) await _supabase.from('weekly_summaries').upsert(wsRows, { onConflict: 'class_name,week_start' });
     toast('数据已迁移到云端');
   } catch(e) { console.error('[Supabase] migration error:', e); toast('迁移失败：' + e.message); }
 }
 
 // Bump this whenever default roster/schedule structure changes.
 // Existing browsers will run migrations once, then preserve user edits until the source file changes again.
-const SOURCE_VERSION = '2026-08-15-v7';
+const SOURCE_VERSION = '2026-09-03-v8';
 
 // Migrate old class name '少林三班' -> '少林三四班'
 function migrateData(data) {
@@ -1133,10 +1198,22 @@ function runMigrations() {
 }
 
 // Run only safe normalizations that won't revert user edits.
+function normalizeWeeklySummaries() {
+  if (!db.weeklySummaries) { db.weeklySummaries = {}; return true; }
+  let changed = false;
+  Object.values(db.weeklySummaries).forEach(w => {
+    if (!w.author) { w.author = ''; changed = true; }
+    if (!Array.isArray(w.items)) { w.items = []; changed = true; }
+    if (w.summary === undefined) { w.summary = ''; changed = true; }
+  });
+  return changed;
+}
+
 function runLightNormalizations() {
   let changed = false;
   if (normalizeStudents()) changed = true;
   if (normalizeEnrollment()) changed = true;
+  if (normalizeWeeklySummaries()) changed = true;
   return changed;
 }
 
@@ -1163,6 +1240,7 @@ function runLightNormalizations() {
       initMonthSelect();
       renderRoster();
       renderEnrollmentTable();
+      renderWeeklySummaryTable();
       toast('离线模式：Supabase 未连接，数据仅保存在本设备');
       const loader = document.getElementById('app-loader');
       if (loader) loader.style.display = 'none';
@@ -1176,6 +1254,7 @@ function runLightNormalizations() {
       db = db || loadData();
       updateStats(); renderCalendars(); initMonthSelect();
       renderRoster(); renderEnrollmentTable();
+      renderWeeklySummaryTable();
       toast('加载出错，已使用本地缓存数据');
     } catch(e2) {
       console.error('[App] Fatal:', e2);
@@ -1230,6 +1309,7 @@ async function _startApp(session) {
   initMonthSelect();
   renderRoster();
   renderEnrollmentTable();
+  renderWeeklySummaryTable();
   const loader = document.getElementById('app-loader');
   if (loader) loader.style.display = 'none';
 }
@@ -1237,6 +1317,13 @@ async function _startApp(session) {
 // ===================== Helpers =====================
 function fmtDate(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function attKey(date, time, cls) { return date + '|' + time + '|' + cls; }
+function getMondayOfWeek(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const mon = new Date(d.setDate(diff));
+  return mon.getFullYear() + '-' + String(mon.getMonth()+1).padStart(2,'0') + '-' + String(mon.getDate()).padStart(2,'0');
+}
 
 // 出勤记录：{ teacher: 'xxx', students: [names] }。兼容旧格式（纯数组）。
 // 只读版本，永不修改 db.attendance。空记录返回 {teacher:'', students:[]}。
@@ -1337,6 +1424,7 @@ function switchTab(name) {
   event.target.classList.add('active');
   document.getElementById('sec-' + name).classList.add('active');
   if (name === 'attendance') { renderAttendanceTable(); }
+  if (name === 'weekly') { renderWeeklySummaryTable(); }
   if (name === 'enrollment') { renderEnrollmentTable(); }
   if (name === 'roster') { renderRoster(); }
 }
@@ -2396,6 +2484,7 @@ function saveActivateEnrollment(cls, name, btn) {
   })();
   btn.closest('.modal-overlay').remove();
   renderEnrollmentTable();
+      renderWeeklySummaryTable();
   toast(name + ' 已激活，新课时已合并');
 }
 
@@ -2528,6 +2617,7 @@ function saveEnrollment(cls, name, btn) {
   })();
   btn.closest('.modal-overlay').remove();
   renderEnrollmentTable();
+      renderWeeklySummaryTable();
   toast(`已保存 ${name} 的报课信息`);
 }
 
@@ -2558,6 +2648,7 @@ function deleteEnrollmentRow(cls, name, btn) {
       } catch(e) { console.error(e); toast('删除同步失败：' + e.message); }
     })();
     renderEnrollmentTable();
+      renderWeeklySummaryTable();
     toast('已删除 ' + name);
     return;
   }
@@ -2628,6 +2719,7 @@ async function generateReportLink(cls, name) {
   if (error) { toast('生成失败：' + error.message); return; }
   _reportTokens.set(cls + '|' + name, { is_revoked: false, created_at: new Date().toISOString(), token_value: rawToken });
   renderEnrollmentTable();
+      renderWeeklySummaryTable();
   const link = 'https://shaolintemplephilippine-droid.github.io/shaolinschedule/student-report.html#t=' + rawToken;
   showTokenModal(link, name);
   toast('已为 ' + name + ' 生成报告链接');
@@ -2667,6 +2759,7 @@ async function revokeReportLink(cls, name, btn) {
     }
     token.is_revoked = true;
     renderEnrollmentTable();
+      renderWeeklySummaryTable();
     toast('已停用 ' + name + ' 的报告链接');
     return;
   }
@@ -2758,6 +2851,7 @@ function exportAllData() {
     students: db.students,
     attendance: db.attendance,
     enrollment: db.enrollment,
+    weeklySummaries: db.weeklySummaries,
   };
   const json = JSON.stringify(exportObj, null, 2);
   const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
@@ -2806,6 +2900,8 @@ async function syncFromCloud() {
     initMonthSelect();
     renderRoster();
     renderEnrollmentTable();
+      renderWeeklySummaryTable();
+    renderWeeklySummaryTable();
     toast('已从云端刷新');
   } catch (e) {
     console.error('[Sync] download failed:', e);
@@ -2835,6 +2931,7 @@ function importAllData(event) {
       db.students = data.students;
       db.attendance = data.attendance;
       db.enrollment = data.enrollment;
+      db.weeklySummaries = data.weeklySummaries || {};
       db.sourceVersion = SOURCE_VERSION;
       db._migrated1hour = data._migrated1hour || false;
       saveData();
@@ -2848,6 +2945,7 @@ function importAllData(event) {
       // Re-render everything
       renderCalendars();
       renderEnrollmentTable();
+      renderWeeklySummaryTable();
       renderRoster();
       updateStats();
       toast('数据导入成功！');
@@ -2857,6 +2955,122 @@ function importAllData(event) {
     event.target.value = '';
   };
   reader.readAsText(file, 'utf-8');
+}
+
+// ===================== Weekly Summary =====================
+function getWeeklySummaryKey(cls, weekStart) { return cls + '|' + weekStart; }
+function getWeeklySummary(cls, weekStart) {
+  return db.weeklySummaries[getWeeklySummaryKey(cls, weekStart)] || { author: '', items: [], summary: '' };
+}
+function getWeekLabel(weekStart) {
+  const mon = new Date(weekStart + 'T12:00:00');
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  const fmt = d => (d.getMonth()+1) + '/' + d.getDate();
+  return weekStart + '（' + fmt(mon) + ' - ' + fmt(sun) + '）';
+}
+function renderWeeklySummaryTable() {
+  const container = document.getElementById('weeklySummaryList');
+  if (!container) return;
+  const classes = Object.keys(db.students || {});
+  let html = '';
+  classes.forEach(cls => {
+    const summaries = Object.entries(db.weeklySummaries || {})
+      .filter(([key]) => key.startsWith(cls + '|'))
+      .map(([key, rec]) => ({ weekStart: key.split('|')[1], rec }))
+      .sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+    html += '<div style="margin-bottom:22px"><div style="font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px"><span class="badge-cls bc-' + (CLASS_INFO[cls] ? CLASS_INFO[cls].color.replace('c','') : '1') + '">' + cls + '</span><span style="font-size:13px;color:var(--text2)">共 ' + summaries.length + ' 条</span></div>';
+    if (summaries.length === 0) {
+      html += '<div style="padding:14px;background:#f8fafc;border-radius:8px;color:var(--text2);font-size:13px">暂无 ' + cls + ' 的周总结，点击右上角添加。</div>';
+    } else {
+      html += '<div style="display:grid;gap:10px">';
+      summaries.forEach(s => {
+        const chips = (s.rec.items || []).map(it => '<span style="display:inline-block;background:#f1f5f9;color:#334155;border-radius:999px;padding:3px 10px;font-size:12px;margin:2px 4px 2px 0">' + it + '</span>').join('');
+        html += '<div style="border:1px solid var(--line);border-radius:10px;padding:14px;background:#fff">'
+          + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:8px">'
+          + '<div><div style="font-weight:700;font-size:14px">' + getWeekLabel(s.weekStart) + '</div>'
+          + '<div style="font-size:12px;color:var(--muted);margin-top:3px">总结人：' + (s.rec.author || '-') + '</div></div>'
+          + '<div style="display:flex;gap:6px;flex-shrink:0">'
+          + '<button class="btn btn-sm btn-outline" onclick="openWeeklySummaryModal(\'' + esc(cls) + '\',\'' + esc(s.weekStart) + '\')">编辑</button>'
+          + '<button class="btn btn-sm btn-danger" onclick="deleteWeeklySummary(\'' + esc(cls) + '\',\'' + esc(s.weekStart) + '\')">删除</button>'
+          + '</div></div>'
+          + '<div style="margin-bottom:8px">' + chips + '</div>'
+          + '<div style="font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap">' + (s.rec.summary || '').replace(/\n/g, '<br>') + '</div>'
+          + '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+function openWeeklySummaryModal(cls, weekStart) {
+  const isEdit = !!weekStart;
+  const classes = Object.keys(db.students || {});
+  if (!cls && classes.length > 0) cls = classes[0];
+  const week = weekStart || getMondayOfWeek(fmtDate(new Date()));
+  const existing = isEdit ? getWeeklySummary(cls, week) : { author: '', items: [], summary: '' };
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.maxWidth = '640px';
+
+  const clsOptions = classes.map(c => '<option value="' + c + '" ' + (c === cls ? 'selected' : '') + '>' + c + '</option>').join('');
+  const authorOptions = WEEKLY_SUMMARY_AUTHORS.map(a => '<option value="' + a + '" ' + (a === existing.author ? 'selected' : '') + '>' + a + '</option>').join('') + '<option value="">- 未选择 -</option>';
+  const itemChecks = WEEKLY_SUMMARY_ITEMS.map(it => '<label style="display:inline-flex;align-items:center;gap:5px;margin:4px 8px 4px 0;font-size:13px;cursor:pointer"><input type="checkbox" name="ws_item" value="' + it + '" ' + ((existing.items || []).includes(it) ? 'checked' : '') + '>' + it + '</label>').join('');
+  const tplOptions = WEEKLY_SUMMARY_TEMPLATES.map((t, i) => '<option value="' + i + '">' + t + '</option>').join('');
+
+  modal.innerHTML = '<h3>' + (isEdit ? '✏️ 编辑周课总结' : '＋ 新增周课总结') + '</h3>'
+    + '<label style="display:block;margin-bottom:12px;font-size:14px">班级<select id="ws_cls" style="margin-top:5px">' + clsOptions + '</select></label>'
+    + '<label style="display:block;margin-bottom:12px;font-size:14px">周开始（周一）<input type="date" id="ws_week" value="' + week + '"></label>'
+    + '<label style="display:block;margin-bottom:12px;font-size:14px">总结人<select id="ws_author">' + authorOptions + '</select></label>'
+    + '<div style="margin-bottom:12px;font-size:14px"><div style="margin-bottom:6px">训练内容（多选）</div><div style="display:flex;flex-wrap:wrap">' + itemChecks + '</div></div>'
+    + '<label style="display:block;margin-bottom:12px;font-size:14px">总结术语<select id="ws_tpl" onchange="var t=WEEKLY_SUMMARY_TEMPLATES[this.value]; if(t){document.getElementById(\'ws_summary\').value=t;}"><option value="">- 选择模板 -</option>' + tplOptions + '</select></label>'
+    + '<label style="display:block;margin-bottom:12px;font-size:14px">总结内容<textarea id="ws_summary" rows="5" placeholder="可输入自定义总结，或从上方选择模板">' + esc(existing.summary || '') + '</textarea></label>'
+    + '<div class="modal-actions">'
+    + '<button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">取消</button>'
+    + '<button class="btn btn-primary" onclick="saveWeeklySummary(this)">' + (isEdit ? '保存' : '添加') + '</button>'
+    + '</div>';
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+function saveWeeklySummary(btn) {
+  const overlay = btn.closest('.modal-overlay');
+  const cls = overlay.querySelector('#ws_cls').value;
+  const week = overlay.querySelector('#ws_week').value;
+  const author = overlay.querySelector('#ws_author').value;
+  const summary = overlay.querySelector('#ws_summary').value.trim();
+  const checked = Array.from(overlay.querySelectorAll('input[name="ws_item"]:checked')).map(cb => cb.value);
+  if (!cls || !week) { toast('请选择班级和周开始日期'); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(week)) { toast('日期格式不正确'); return; }
+  const key = getWeeklySummaryKey(cls, week);
+  db.weeklySummaries[key] = { author, items: checked, summary };
+  saveData();
+  (async () => {
+    if (!_supabase) return;
+    try {
+      await _supabase.from('weekly_summaries').upsert({ class_name: cls, week_start: week, author, content_items: checked, summary_text: summary }, { onConflict: 'class_name,week_start' });
+    } catch (e) { console.error('[Weekly] sync:', e); }
+  })();
+  overlay.remove();
+  renderWeeklySummaryTable();
+  toast('周总结已保存');
+}
+function deleteWeeklySummary(cls, weekStart) {
+  if (!confirm('确定删除 ' + cls + ' ' + getWeekLabel(weekStart) + ' 的周总结吗？')) return;
+  const key = getWeeklySummaryKey(cls, weekStart);
+  delete db.weeklySummaries[key];
+  saveData();
+  (async () => {
+    if (!_supabase) return;
+    try {
+      await _supabase.from('weekly_summaries').delete().eq('class_name', cls).eq('week_start', weekStart);
+    } catch (e) { console.error('[Weekly] delete:', e); }
+  })();
+  renderWeeklySummaryTable();
+  toast('已删除周总结');
 }
 </script>
 </body>

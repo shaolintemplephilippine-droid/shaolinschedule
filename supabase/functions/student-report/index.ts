@@ -171,6 +171,13 @@ serve(async (req) => {
     daysLeft = Math.ceil((e.getTime() - now.getTime()) / 86400000);
   }
 
+  // Weekly summaries for this class
+  const { data: wsRows } = await supabase
+    .from("weekly_summaries")
+    .select("week_start, author, content_items, summary_text")
+    .eq("class_name", class_name)
+    .order("week_start", { ascending: false });
+
   // Current month attendance
   const curMonth = now.toISOString().slice(0, 7);
   const curMonthRecords = studentRecords.filter(r => r.date.startsWith(curMonth))
@@ -207,6 +214,12 @@ serve(async (req) => {
         date: r.date,
         time: r.time,
         teacher: r.teacher,
+      })),
+      weeklySummaries: (wsRows || []).map(r => ({
+        weekStart: r.week_start,
+        author: r.author || "",
+        items: Array.isArray(r.content_items) ? r.content_items : [],
+        summary: r.summary_text || "",
       })),
     }),
     {
