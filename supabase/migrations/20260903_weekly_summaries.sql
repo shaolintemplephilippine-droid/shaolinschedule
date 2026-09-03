@@ -27,3 +27,5 @@ CREATE POLICY "Admins can update weekly summaries"
   ON weekly_summaries FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Admins can delete weekly summaries"
   ON weekly_summaries FOR DELETE TO authenticated USING (true);
+-- Explicit grants are required even when RLS policies exist; policies alone do not give table-level permission.
+GRANT ALL ON TABLE weekly_summaries TO authenticated, service_role;

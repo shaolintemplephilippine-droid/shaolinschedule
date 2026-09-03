@@ -778,55 +778,71 @@ async function loadDataAsync() {
   const defaultStudents = buildDefaultStudents();
   if (!_supabase) return loadData();
   const session = await _supabase.auth.getSession().then(r => r.data.session).catch(() => null);
-  if (session) {
+  if (!session) return loadData();
+  try {
+    // Fetch each table independently so a missing/empty table doesn't break the whole load.
+    let stuRows = [], attRows = [], enrRows = [], wsRows = [];
+    let queriesOk = true;
     try {
-      const [{ data: stuRows, error: e1 }, { data: attRows, error: e2 }, { data: enrRows, error: e3 }, { data: wsRows, error: e4 }] = await Promise.all([
-        _supabase.from('students').select('*').order('class_name').order('name'),
-        _supabase.from('attendance_records').select('*').order('date'),
-        _supabase.from('enrollment').select('*'),
-        _supabase.from('weekly_summaries').select('*').order('week_start')
-      ]);
-      if (e1) console.warn('[Supabase] students error:', e1.message);
-      if (e2) console.warn('[Supabase] attendance error:', e2.message);
-      if (e3) console.warn('[Supabase] enrollment error:', e3.message);
-      if (e4) console.warn('[Supabase] weekly summary error:', e4.message);
-      const students = {};
-      ['少林一班','少林二班','少林三四班'].forEach(c => { students[c] = []; });
-      if (stuRows && stuRows.length > 0) {
-        stuRows.forEach(r => {
-          if (!students[r.class_name]) students[r.class_name] = [];
-          students[r.class_name].push({
-            name: r.name, phone: r.phone||'', gender: r.gender||'男',
-            birthYear: r.birth_year||'', note: r.note||''
-          });
+      const { data, error } = await _supabase.from('students').select('*').order('class_name').order('name');
+      if (error) { console.warn('[Supabase] students error:', error.message); queriesOk = false; }
+      else stuRows = data || [];
+    } catch(e) { console.warn('[Supabase] students query failed:', e); queriesOk = false; }
+    try {
+      const { data, error } = await _supabase.from('attendance_records').select('*').order('date');
+      if (error) { console.warn('[Supabase] attendance error:', error.message); queriesOk = false; }
+      else attRows = data || [];
+    } catch(e) { console.warn('[Supabase] attendance query failed:', e); queriesOk = false; }
+    try {
+      const { data, error } = await _supabase.from('enrollment').select('*');
+      if (error) { console.warn('[Supabase] enrollment error:', error.message); queriesOk = false; }
+      else enrRows = data || [];
+    } catch(e) { console.warn('[Supabase] enrollment query failed:', e); queriesOk = false; }
+    try {
+      const { data, error } = await _supabase.from('weekly_summaries').select('*').order('week_start');
+      if (error) { console.warn('[Supabase] weekly summary error:', error.message); queriesOk = false; }
+      else wsRows = data || [];
+    } catch(e) { console.warn('[Supabase] weekly summary query failed:', e); queriesOk = false; }
+
+    const students = {};
+    ['少林一班','少林二班','少林三四班'].forEach(c => { students[c] = []; });
+    if (stuRows.length > 0) {
+      stuRows.forEach(r => {
+        if (!students[r.class_name]) students[r.class_name] = [];
+        students[r.class_name].push({
+          name: r.name, phone: r.phone||'', gender: r.gender||'男',
+          birthYear: r.birth_year||'', note: r.note||''
         });
-      }
-      const attendance = {};
-      if (attRows) attRows.forEach(r => {
-        attendance[r.date+'|'+r.time+'|'+r.class_name] = { teacher: r.teacher||'', students: r.student_names||[] };
       });
-      const enrollment = {};
-      if (enrRows) enrRows.forEach(r => {
-        enrollment[r.class_name+'|'+r.student_name] = {
-          totalHours: r.total_hours||0, validDays: r.valid_days||0,
-          startDate: r.start_date||'', endDate: r.end_date||'',
-          beforeJune: r.before_june||0, isDisciple: r.is_disciple||false
-        };
-      });
-      const weeklySummaries = {};
-      if (wsRows) wsRows.forEach(r => {
-        weeklySummaries[r.class_name+'|'+r.week_start] = {
-          author: r.author || '',
-          items: Array.isArray(r.content_items) ? r.content_items : [],
-          summary: r.summary_text || ''
-        };
-      });
-      const hasCloud = (stuRows && stuRows.length > 0) || (attRows && attRows.length > 0) || (enrRows && enrRows.length > 0) || (wsRows && wsRows.length > 0);
-      if (hasCloud) {
-        console.log('[Data] Loaded from Supabase');
-        return { students, attendance, enrollment, weeklySummaries, sourceVersion: SOURCE_VERSION, _migrated1hour: true };
-      }
-      // Cloud empty → migrate localStorage data to Supabase
+    }
+    const attendance = {};
+    attRows.forEach(r => {
+      attendance[r.date+'|'+r.time+'|'+r.class_name] = { teacher: r.teacher||'', students: r.student_names||[] };
+    });
+    const enrollment = {};
+    enrRows.forEach(r => {
+      enrollment[r.class_name+'|'+r.student_name] = {
+        totalHours: r.total_hours||0, validDays: r.valid_days||0,
+        startDate: r.start_date||'', endDate: r.end_date||'',
+        beforeJune: r.before_june||0, isDisciple: r.is_disciple||false
+      };
+    });
+    const weeklySummaries = {};
+    wsRows.forEach(r => {
+      weeklySummaries[r.class_name+'|'+r.week_start] = {
+        author: r.author || '',
+        items: Array.isArray(r.content_items) ? r.content_items : [],
+        summary: r.summary_text || ''
+      };
+    });
+    const hasCloud = stuRows.length > 0 || attRows.length > 0 || enrRows.length > 0 || wsRows.length > 0;
+    if (hasCloud) {
+      console.log('[Data] Loaded from Supabase');
+      return { students, attendance, enrollment, weeklySummaries, sourceVersion: SOURCE_VERSION, _migrated1hour: true };
+    }
+    // Only migrate localStorage to the cloud if all queries succeeded and the cloud is genuinely empty.
+    // This prevents a missing/erroring table from causing stale local data to overwrite cloud data.
+    if (queriesOk) {
       const local = loadData();
       const hasLocal = Object.keys(local.attendance).length > 0 || Object.keys(local.enrollment).length > 0 || Object.keys(local.weeklySummaries || {}).length > 0;
       if (hasLocal) {
@@ -835,11 +851,14 @@ async function loadDataAsync() {
         console.log('[Data] Migration complete');
       }
       return local;
-    } catch(e) {
-      console.warn('[Supabase] Load failed, using localStorage:', e);
     }
+    // Some cloud queries failed but cloud appears empty; fall back to localStorage without uploading.
+    console.warn('[Supabase] Some cloud queries failed; using localStorage without overwriting cloud.');
+    return loadData();
+  } catch(e) {
+    console.warn('[Supabase] Load failed, using localStorage:', e);
+    return loadData();
   }
-  return loadData();
 }
 
 function saveData() {
