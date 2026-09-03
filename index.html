@@ -1520,7 +1520,7 @@ function renderAttendanceTable() {
         group.forEach(s => {
           const rec = getAttRecord(s.date, s.time, s.className);
           totalAttended += rec.students.length;
-          totalStudents += (db.students[s.className] || []).length;
+          totalStudents += getActiveStudentCount(s.className);
           if (!displayTeacher) displayTeacher = rec.teacher || s.teacher;
           if (rec.students.length > 0 || rec.teacher) hasRecord = true;
         });
@@ -1549,7 +1549,7 @@ function renderAttendanceTable() {
       daySessions.forEach((s, idx) => {
         const rec = getAttRecord(s.date, s.time, s.className);
         const attended = rec.students.length;
-        const total = (db.students[s.className] || []).length;
+        const total = getActiveStudentCount(s.className);
         const ci = CLASS_INFO[s.className];
         const displayTeacher = rec.teacher || s.teacher;
         const hasRecord = attended > 0 || rec.teacher;
@@ -1674,7 +1674,7 @@ function showAttendanceModal(date, time, className, teacher, dow, isCombined) {
   let totalChecked = 0;
 
   classesToShow.forEach(cls => {
-    const students = db.students[cls] || [];
+    const students = (db.students[cls] || []).filter(st => !isStudentFrozen(cls, st.name));
     const rec = getAttRecord(date, time, cls);
     const attended = rec.students;
     const ci = CLASS_INFO[cls];
@@ -2322,6 +2322,84 @@ function calcConsumption(cls, name) {
   return { monthly, total, fromAttendance };
 }
 
+function isStudentFrozen(cls, name) {
+  const st = db.students[cls] && db.students[cls].find(s => s.name === name);
+  if (!st) return true;
+  const enroll = getEnrollment(cls, name);
+  if (enroll.isDisciple) return false;
+  const days = daysUntil(enroll.endDate);
+  return days !== null && days < 0;
+}
+
+function getActiveStudentCount(cls) {
+  return (db.students[cls] || []).filter(st => !isStudentFrozen(cls, st.name)).length;
+}
+
+function activateEnrollment(cls, name) {
+  const enroll = getEnrollment(cls, name);
+  const cons = calcConsumption(cls, name);
+  const remaining = (parseInt(enroll.totalHours) || 0) - cons.total;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.maxWidth = '380px';
+  modal.innerHTML = `
+    <h3>🔓 激活学员课时</h3>
+    <div style="margin-bottom:16px;font-size:14px;color:var(--text2)">${esc(cls)} · ${esc(name)}<br>当前剩余课时：${remaining} &nbsp;|&nbsp; 原到期日：${enroll.endDate || '-'}</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <label style="font-size:13px;color:var(--text2)">新购课时 <input type="number" id="act_hours" value="" placeholder="例如：20" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
+      <label style="font-size:13px;color:var(--text2)">有效期天数 <input type="number" id="act_days" value="" placeholder="例如：60" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
+      <div style="font-size:12px;color:var(--text2)">生效日期将设为今天，新购课时会与剩余课时合并。</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
+      <button class="btn btn-primary" onclick="saveActivateEnrollment('${esc(cls)}','${esc(name)}',this)">激活</button>
+    </div>
+  `;
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+function saveActivateEnrollment(cls, name, btn) {
+  const newHours = parseInt(document.getElementById('act_hours').value) || 0;
+  const validDays = parseInt(document.getElementById('act_days').value) || 0;
+  if (newHours <= 0 || validDays <= 0) {
+    toast('请输入有效的课时和天数');
+    return;
+  }
+  const enroll = getEnrollment(cls, name);
+  const cons = calcConsumption(cls, name);
+  const remaining = (parseInt(enroll.totalHours) || 0) - cons.total;
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(start.getDate() + validDays);
+  const key = enrollKey(cls, name);
+  db.enrollment[key] = {
+    totalHours: remaining + newHours,
+    validDays: validDays,
+    startDate: start.toISOString().split('T')[0],
+    endDate: end.toISOString().split('T')[0],
+    beforeJune: enroll.beforeJune || 0,
+    isDisciple: enroll.isDisciple || false,
+  };
+  saveData();
+  (async () => {
+    if (!_supabase) return;
+    try {
+      const enr = db.enrollment[key];
+      const { error } = await _supabase.from('enrollment').upsert({ class_name: cls, student_name: name, total_hours: enr.totalHours || 0, valid_days: enr.validDays || 0, start_date: enr.startDate || null, end_date: enr.endDate || null, before_june: enr.beforeJune || 0, is_disciple: enr.isDisciple || false }, { onConflict: 'class_name,student_name' });
+      if (error) { console.error(error); toast('报课同步失败：' + error.message); }
+    } catch (e) { console.error(e); }
+  })();
+  btn.closest('.modal-overlay').remove();
+  renderEnrollmentTable();
+  toast(name + ' 已激活，新课时已合并');
+}
+
+
 function renderEnrollmentTable() {
   const table = document.getElementById('enrollmentTable');
   const months = ['6','7','8','9','10','11','12'];
@@ -2329,7 +2407,7 @@ function renderEnrollmentTable() {
     <th>班级</th><th>姓名</th><th>总课时</th><th>有效期天数</th><th>生效日期</th><th>到期日期</th>
     <th>距离到期天数</th><th>总消课数</th>
     <th>6月</th><th>7月</th><th>8月</th><th>9月</th><th>10月</th><th>11月</th><th>12月</th>
-    <th>当前剩余</th><th>操作</th><th>报告链接</th>
+    <th>当前剩余</th><th>状态</th><th>操作</th><th>报告链接</th>
   </tr></thead><tbody>`;
 
   Object.keys(db.students).forEach(cls => {
@@ -2366,7 +2444,9 @@ function renderEnrollmentTable() {
         
         ${months.map(m => `<td class="num">${cons.monthly[m] || 0}</td>`).join('')}
         <td class="${remainingClass} num">${isDisciple ? '—' : remaining}</td>
+        <td>${isStudentFrozen(cls, st.name) ? '<span style="color:#dc2626;font-weight:700">已冻结</span>' : '<span style="color:#16a34a">正常</span>'}</td>
         <td>
+          ${isStudentFrozen(cls, st.name) ? `<button class="btn btn-sm btn-primary" onclick="activateEnrollment('${esc(cls)}','${esc(st.name)}')">激活</button>` : ''}
           <button class="btn btn-sm btn-outline" onclick="editEnrollment('${esc(cls)}','${esc(st.name)}')">编辑</button>
           <button class="btn btn-sm btn-danger" onclick="deleteEnrollmentRow('${esc(cls)}','${esc(st.name)}',this)" title="删除该学员及其报课、出勤记录">删除</button>
         </td>
@@ -2639,7 +2719,7 @@ function exportAttendance() {
   sessions.forEach(s => {
     const rec = getAttRecord(s.date, s.time, s.className);
     const attended = rec.students.length;
-    const total = (db.students[s.className] || []).length;
+    const total = getActiveStudentCount(s.className);
     const teacher = rec.teacher || s.teacher;
     csv += `${s.date},${s.dayName},${s.time},${s.className},${teacher},${attended},${total}\n`;
   });
