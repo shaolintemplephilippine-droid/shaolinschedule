@@ -39,7 +39,7 @@ body { font-family:"Microsoft YaHei","Segoe UI",sans-serif; background:var(--bg)
 .header { background:linear-gradient(135deg,#7f1d1d,#b91c1c); color:#fff; padding:24px 32px; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,.15); }
 .header h1 { font-size:24px; margin-bottom:4px; }
 .header p { font-size:13px; opacity:.85; }
-.tabs { display:flex; gap:4px; margin-top:16px; }
+.tabs { display:flex; flex-wrap:wrap; gap:4px; margin-top:16px; }
 .tab { padding:8px 24px; background:rgba(255,255,255,.15); border:none; color:#fff; font-size:14px; cursor:pointer; border-radius:8px 8px 0 0; transition:background .2s; font-family:inherit; }
 .tab:hover { background:rgba(255,255,255,.25); }
 .tab.active { background:var(--bg); color:var(--text); font-weight:600; }
@@ -296,6 +296,7 @@ table.data-table .day-sun { color:var(--purple); font-weight:600; }
     <button class="tab" onclick="switchTab('attendance')">✅ 出勤统计</button>
     <button class="tab" onclick="switchTab('weekly')">📝 周课总结</button>
     <button class="tab" onclick="switchTab('enrollment')">📊 报课统计</button>
+    <button class="tab" id="frozenTabBtn" onclick="switchTab('frozen')">🧊 已冻结</button>
     <button class="tab" onclick="switchTab('roster')">👥 学员管理</button>
   </div>
   <div class="data-sync-bar">
@@ -480,6 +481,24 @@ table.data-table .day-sun { color:var(--purple); font-weight:600; }
       <p>2. 6-12月消课数根据「出勤统计」中登记的出勤记录自动计算</p>
       <p>3. 距离到期天数 = 到期日期 - 今天；当前剩余 = 总课时 - 总消课数</p>
       <p>4. 负值表示课时已用完或已超期</p>
+      <p>5. 已冻结学员统一显示在「🧊 已冻结」标签中，激活或续期后自动回到「报课统计」</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== Tab 3b: Frozen ==================== -->
+<div class="section" id="sec-frozen">
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3>🧊 已冻结学员<span id="frozenCount" style="color:#dc2626;font-weight:700;font-size:14px;margin-left:6px"></span></h3>
+        <div class="sub">课时超期或已停课的学员都集中在这里 · 点「激活」补充课时、或在「编辑」里续期后，会自动回到「报课统计」</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table enrollment-table" id="frozenTable"></table>
     </div>
   </div>
 
@@ -1445,6 +1464,7 @@ function switchTab(name) {
   if (name === 'attendance') { renderAttendanceTable(); }
   if (name === 'weekly') { renderWeeklySummaryTable(); }
   if (name === 'enrollment') { renderEnrollmentTable(); }
+  if (name === 'frozen') { renderEnrollmentTable(); }
   if (name === 'roster') { renderRoster(); }
 }
 
@@ -2508,8 +2528,7 @@ function saveActivateEnrollment(cls, name, btn) {
 }
 
 
-function renderEnrollmentTable() {
-  const table = document.getElementById('enrollmentTable');
+function enrollmentTableHtml(frozenOnly) {
   const months = ['6','7','8','9','10','11','12'];
   let html = `<thead><tr>
     <th>班级</th><th>姓名</th><th>总课时</th><th>有效期天数</th><th>生效日期</th><th>到期日期</th>
@@ -2517,11 +2536,15 @@ function renderEnrollmentTable() {
     <th>6月</th><th>7月</th><th>8月</th><th>9月</th><th>10月</th><th>11月</th><th>12月</th>
     <th>当前剩余</th><th>状态</th><th>操作</th><th>报告链接</th>
   </tr></thead><tbody>`;
+  let count = 0;
 
   Object.keys(db.students).forEach(cls => {
     const ci = CLASS_INFO[cls] || {};
     const colorNum = (ci.color || '').replace('c','');
     db.students[cls].forEach(st => {
+      const frozen = isStudentFrozen(cls, st.name);
+      if (frozen !== frozenOnly) return;
+      count++;
       const enroll = getEnrollment(cls, st.name);
       const cons = calcConsumption(cls, st.name);
       const days = daysUntil(enroll.endDate);
@@ -2549,22 +2572,40 @@ function renderEnrollmentTable() {
         <td>${enroll.endDate || '<span class="empty">-</span>'}</td>
         <td class="${daysClass}">${daysText}</td>
         <td class="num">${cons.total}</td>
-        
+
         ${months.map(m => `<td class="num">${cons.monthly[m] || 0}</td>`).join('')}
         <td class="${remainingClass} num">${isDisciple ? '—' : remaining}</td>
-        <td>${isStudentFrozen(cls, st.name) ? '<span style="color:#dc2626;font-weight:700">已冻结</span>' : '<span style="color:#16a34a">正常</span>'}</td>
+        <td>${frozen ? '<span style="color:#dc2626;font-weight:700">已冻结</span>' : '<span style="color:#16a34a">正常</span>'}</td>
         <td>
-          ${isStudentFrozen(cls, st.name) ? `<button class="btn btn-sm btn-primary" onclick="activateEnrollment('${esc(cls)}','${esc(st.name)}')">激活</button>` : ''}
+          ${frozen ? `<button class="btn btn-sm btn-primary" onclick="activateEnrollment('${esc(cls)}','${esc(st.name)}')">激活</button>` : ''}
           <button class="btn btn-sm btn-outline" onclick="editEnrollment('${esc(cls)}','${esc(st.name)}')">编辑</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteEnrollmentRow('${esc(cls)}','${esc(st.name)}',this)" title="删除该学员及其报课、出勤记录">删除</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteEnrollmentRow('${esc(cls)}','${esc(st.name)}',this)" title="删除该学员及其报课、出勤记录"> 删除</button>
         </td>
         <td class="token-cell">${renderTokenCell(cls, st.name)}</td>
       </tr>`;
     });
   });
 
+  if (count === 0) {
+    html += `<tr><td colspan="19" style="text-align:center;padding:28px;color:#94a3b8">${frozenOnly ? '暂无冻结学员' : '暂无在读学员'}</td></tr>`;
+  }
   html += '</tbody>';
-  table.innerHTML = html;
+  return { html, count };
+}
+
+// 「报课统计」只显示正常学员；冻结学员统一显示在「已冻结」标签
+function renderEnrollmentTable() {
+  if (!db) return;
+  const normal = enrollmentTableHtml(false);
+  const frozen = enrollmentTableHtml(true);
+  const table = document.getElementById('enrollmentTable');
+  if (table) table.innerHTML = normal.html;
+  const frozenTable = document.getElementById('frozenTable');
+  if (frozenTable) frozenTable.innerHTML = frozen.html;
+  const frozenBtn = document.getElementById('frozenTabBtn');
+  if (frozenBtn) frozenBtn.textContent = frozen.count > 0 ? `🧊 已冻结 (${frozen.count})` : '🧊 已冻结';
+  const frozenCnt = document.getElementById('frozenCount');
+  if (frozenCnt) frozenCnt.textContent = frozen.count > 0 ? `（${frozen.count} 人）` : '';
 }
 
 function editEnrollment(cls, name) {
@@ -2792,7 +2833,7 @@ async function revokeReportLink(cls, name, btn) {
 function exportEnrollment() {
   const months = ['6','7','8','9','10','11','12'];
   let csv = '\uFEFF菲律宾少林文化中心 - 学员报课信息统计\n';
-  csv += '班级,姓名,总课时,有效期天数,生效日期,到期日期,距离到期天数,总消课数,6月前累计,6月消课,7月消课,8月消课,9月消课,10月消课,11月消课,12月消课,当前剩余\n';
+  csv += '班级,姓名,总课时,有效期天数,生效日期,到期日期,距离到期天数,总消课数,6月前累计,6月消课,7月消课,8月消课,9月消课,10月消课,11月消课,12月消课,当前剩余,状态\n';
 
   Object.keys(db.students).forEach(cls => {
     db.students[cls].forEach(st => {
@@ -2803,7 +2844,7 @@ function exportEnrollment() {
       const remaining = isDisciple ? '' : ((parseInt(enroll.totalHours) || 0) - cons.total);
       csv += `${cls},${st.name},${isDisciple ? '弟子班' : enroll.totalHours},${enroll.validDays},${enroll.startDate},${enroll.endDate},${days === null ? '' : days},${cons.total},${isDisciple ? '' : (enroll.beforeJune || 0)},`;
       csv += months.map(m => cons.monthly[m] || 0).join(',');
-      csv += `,${remaining}\n`;
+      csv += `,${remaining},${isStudentFrozen(cls, st.name) ? '已冻结' : '正常'}\n`;
     });
   });
 
