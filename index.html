@@ -135,6 +135,7 @@ table.data-table .day-sun { color:var(--purple); font-weight:600; }
 .bc-2 { background:var(--c2-bg); color:var(--c2); }
 .bc-3 { background:var(--c3-bg); color:var(--c3); }
 .badge-disciple { display:inline-block; margin-left:6px; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; background:var(--gold); color:#fff; vertical-align:middle; }
+.badge-pause { display:inline-block; margin-left:4px; padding:1px 7px; border-radius:12px; font-size:11px; font-weight:600; background:var(--orange-light); color:var(--orange); vertical-align:middle; }
 .disciple-note { color:var(--gold); font-weight:600; font-size:13px; }
 .count-cell { font-weight:700; font-size:15px; }
 .count-cell .total { color:var(--text2); font-size:13px; font-weight:400; }
@@ -482,6 +483,7 @@ table.data-table .day-sun { color:var(--purple); font-weight:600; }
       <p>3. 距离到期天数 = 到期日期 - 今天；当前剩余 = 总课时 - 总消课数</p>
       <p>4. 负值表示课时已用完或已超期</p>
       <p>5. 已冻结学员统一显示在「🧊 已冻结」标签中，激活或续期后自动回到「报课统计」</p>
+      <p>6. 100 节 / 200 节课属于年卡，每张卡有 4 次停卡机会：点「停卡」后倒计时暂停，复课时到期日按停卡天数自动顺延（续费激活后重新计算 4 次）</p>
     </div>
   </div>
 
@@ -843,7 +845,8 @@ async function loadDataAsync() {
       enrollment[r.class_name+'|'+r.student_name] = {
         totalHours: r.total_hours||0, validDays: r.valid_days||0,
         startDate: r.start_date||'', endDate: r.end_date||'',
-        beforeJune: r.before_june||0, isDisciple: r.is_disciple||false
+        beforeJune: r.before_june||0, isDisciple: r.is_disciple||false,
+        suspensions: (r.suspensions && typeof r.suspensions === 'object') ? r.suspensions : { base: '', items: [] }
       };
     });
     const weeklySummaries = {};
@@ -909,10 +912,24 @@ async function _syncCloud() {
     const enrRows = [];
     Object.entries(db.enrollment).forEach(([key, rec]) => {
       const p = key.split('|');
-      if (p.length === 2) enrRows.push({ class_name:p[0], student_name:p[1], total_hours:rec.totalHours||0, valid_days:rec.validDays||0, start_date:rec.startDate||null, end_date:rec.endDate||null, before_june:rec.beforeJune||0, is_disciple:rec.isDisciple||false });
+      if (p.length !== 2) return;
+      const row = { class_name:p[0], student_name:p[1], total_hours:rec.totalHours||0, valid_days:rec.validDays||0, start_date:rec.startDate||null, end_date:rec.endDate||null, before_june:rec.beforeJune||0, is_disciple:rec.isDisciple||false };
+      const box = pauseBox(rec);
+      if (box.items.length > 0 || box.base) row.suspensions = box;
+      enrRows.push(row);
     });
     if (enrRows.length > 0) {
-      const { error: e2 } = await _supabase.from('enrollment').upsert(enrRows, { onConflict: 'class_name,student_name' });
+      let e2 = null;
+      try {
+        const res = await _supabase.from('enrollment').upsert(enrRows, { onConflict: 'class_name,student_name' });
+        e2 = res.error;
+        if (e2 && /suspensions/i.test(e2.message || '')) {
+          const stripped = enrRows.map(r => { const c = Object.assign({}, r); delete c.suspensions; return c; });
+          const retry = await _supabase.from('enrollment').upsert(stripped, { onConflict: 'class_name,student_name' });
+          e2 = retry.error;
+          if (!e2) toast('停卡记录未存入云端：请先在 Supabase 执行 20261027_enrollment_pause.sql');
+        }
+      } catch (e) { console.error(e); e2 = e; }
       if (e2) { console.error('[Supabase] enrollment sync:', e2.message); toast('报课数据同步失败：' + e2.message); }
     }
     // Sync students (deduplicate by class_name+name)
@@ -1801,7 +1818,9 @@ function showAttendanceModal(date, time, className, teacher, dow, isCombined) {
   let totalChecked = 0;
 
   classesToShow.forEach(cls => {
-    const students = (db.students[cls] || []).filter(st => !isStudentFrozen(cls, st.name));
+    const students = (db.students[cls] || []).filter(st =>
+      !isStudentFrozen(cls, st.name) && !pauseOpen(getEnrollment(cls, st.name))
+    );
     const rec = getAttRecord(date, time, cls);
     const attended = rec.students;
     const ci = CLASS_INFO[cls];
@@ -2411,9 +2430,12 @@ function getEnrollment(cls, name) {
     if (st && st.note && st.note.indexOf('弟子班') >= 0) autoDisciple = true;
   }
   if (!db.enrollment[key]) {
-    db.enrollment[key] = { totalHours: 0, validDays: 0, startDate: '', endDate: '', beforeJune: 0, isDisciple: autoDisciple };
+    db.enrollment[key] = { totalHours: 0, validDays: 0, startDate: '', endDate: '', beforeJune: 0, isDisciple: autoDisciple, suspensions: { base: '', items: [] } };
   }
   if (db.enrollment[key].isDisciple === undefined) db.enrollment[key].isDisciple = autoDisciple;
+  const _box = pauseBox(db.enrollment[key]);
+  // 有停卡记录时，到期日始终由「原始到期日 + 累计顺延」推导，避免历史数据不一致
+  if (_box.items.length > 0) pauseApply(db.enrollment[key]);
   // Auto-upgrade to disciple if student note says so but enrollment hasn't been set
   if (autoDisciple && !db.enrollment[key].isDisciple) db.enrollment[key].isDisciple = true;
   return db.enrollment[key];
@@ -2426,6 +2448,88 @@ function daysUntil(dateStr) {
   today.setHours(0,0,0,0);
   const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
   return diff;
+}
+
+// ===================== 年卡停卡（100 / 200 节） =====================
+// 每张年卡有 4 次停卡机会；停卡期间倒计时暂停，复课时到期日按停卡天数顺延：
+// 到期日 = 原始到期日（生效日 + 有效期）+ 累计停卡天数
+const ANNUAL_PAUSE_LIMIT = 4;
+
+function isAnnualCard(enroll) {
+  if (!enroll || enroll.isDisciple) return false;
+  const hours = parseInt(enroll.totalHours) || 0;
+  const days = parseInt(enroll.validDays) || 0;
+  return hours >= 100 || days >= 365;
+}
+
+// 停卡数据统一成 { base: '原始到期日', items: [{ start, end, days, note, at }] }
+function pauseBox(enroll) {
+  if (!enroll) return { base: '', items: [] };
+  let box = enroll.suspensions;
+  if (Array.isArray(box)) box = { items: box };
+  if (!box || typeof box !== 'object') box = {};
+  if (typeof box.base !== 'string') box.base = '';
+  if (!Array.isArray(box.items)) box.items = [];
+  box.items = box.items.filter(r => r && typeof r === 'object' && r.start);
+  enroll.suspensions = box;
+  return box;
+}
+function pauseItems(enroll) { return pauseBox(enroll).items; }
+function pauseOpen(enroll) { return pauseItems(enroll).find(r => !r.end) || null; }
+function pauseUsedCount(enroll) { return pauseItems(enroll).length; }
+function pauseDaysTotal(enroll) {
+  return pauseItems(enroll).reduce((sum, r) => sum + (r.end ? (parseInt(r.days) || 0) : 0), 0);
+}
+function pauseDateAdd(dateStr, n) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return '';
+  d.setDate(d.getDate() + (parseInt(n) || 0));
+  return fmtDate(d);
+}
+function pauseDateDiff(from, to) {
+  if (!from || !to) return 0;
+  const a = new Date(from + 'T00:00:00');
+  const b = new Date(to + 'T00:00:00');
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return 0;
+  return Math.round((b - a) / 86400000);
+}
+// 重新计算到期日；没有停卡记录时回到原始到期日
+function pauseApply(enroll) {
+  const box = pauseBox(enroll);
+  const total = pauseDaysTotal(enroll);
+  if (!box.base) box.base = enroll.endDate || '';
+  enroll.endDate = box.base ? pauseDateAdd(box.base, total) : '';
+  return enroll;
+}
+function closeTopModal() {
+  const all = document.querySelectorAll('.modal-overlay');
+  if (all.length) all[all.length - 1].remove();
+}
+// 单行写入 Supabase；云端还没有 suspensions 列时退回旧字段并提示执行迁移
+async function _upsertEnrollmentRow(cls, name) {
+  if (!_supabase) return;
+  const enr = db.enrollment[enrollKey(cls, name)];
+  if (!enr) return;
+  const base = {
+    class_name: cls, student_name: name,
+    total_hours: enr.totalHours || 0, valid_days: enr.validDays || 0,
+    start_date: enr.startDate || null, end_date: enr.endDate || null,
+    before_june: enr.beforeJune || 0, is_disciple: enr.isDisciple || false,
+  };
+  const box = pauseBox(enr);
+  const payload = (box.items.length > 0 || box.base) ? Object.assign({}, base, { suspensions: box }) : base;
+  let error = null;
+  try {
+    const res = await _supabase.from('enrollment').upsert(payload, { onConflict: 'class_name,student_name' });
+    error = res.error;
+    if (error && /suspensions/i.test(error.message || '')) {
+      const retry = await _supabase.from('enrollment').upsert(base, { onConflict: 'class_name,student_name' });
+      error = retry.error;
+      if (!error) toast('停卡记录未存入云端：请先在 Supabase 执行 20261027_enrollment_pause.sql');
+    }
+  } catch (e) { console.error(e); error = e; }
+  if (error) { console.error('[Supabase] enrollment sync:', error.message); toast('报课同步失败：' + error.message); }
 }
 
 function calcConsumption(cls, name) {
@@ -2454,12 +2558,16 @@ function isStudentFrozen(cls, name) {
   if (!st) return true;
   const enroll = getEnrollment(cls, name);
   if (enroll.isDisciple) return false;
+  // 停卡中的学员不算冻结：停卡期间不计时，复课后到期日顺延
+  if (pauseOpen(enroll)) return false;
   const days = daysUntil(enroll.endDate);
   return days !== null && days < 0;
 }
 
 function getActiveStudentCount(cls) {
-  return (db.students[cls] || []).filter(st => !isStudentFrozen(cls, st.name)).length;
+  return (db.students[cls] || []).filter(st =>
+    !isStudentFrozen(cls, st.name) && !pauseOpen(getEnrollment(cls, st.name))
+  ).length;
 }
 
 function activateEnrollment(cls, name) {
@@ -2504,29 +2612,160 @@ function saveActivateEnrollment(cls, name, btn) {
   const end = new Date(start);
   end.setDate(start.getDate() + validDays);
   const key = enrollKey(cls, name);
+  const hadPauses = pauseUsedCount(enroll);
   db.enrollment[key] = {
     totalHours: remaining + newHours,
     validDays: validDays,
-    startDate: start.toISOString().split('T')[0],
-    endDate: end.toISOString().split('T')[0],
+    startDate: fmtDate(start),
+    endDate: fmtDate(end),
     beforeJune: enroll.beforeJune || 0,
     isDisciple: enroll.isDisciple || false,
+    suspensions: { base: '', items: [] }, // 续费开新卡，停卡次数重新计算
   };
   saveData();
-  (async () => {
-    if (!_supabase) return;
-    try {
-      const enr = db.enrollment[key];
-      const { error } = await _supabase.from('enrollment').upsert({ class_name: cls, student_name: name, total_hours: enr.totalHours || 0, valid_days: enr.validDays || 0, start_date: enr.startDate || null, end_date: enr.endDate || null, before_june: enr.beforeJune || 0, is_disciple: enr.isDisciple || false }, { onConflict: 'class_name,student_name' });
-      if (error) { console.error(error); toast('报课同步失败：' + error.message); }
-    } catch (e) { console.error(e); }
-  })();
+  _upsertEnrollmentRow(cls, name);
   btn.closest('.modal-overlay').remove();
   renderEnrollmentTable();
       renderWeeklySummaryTable();
-  toast(name + ' 已激活，新课时已合并');
+  toast(name + ' 已激活，新课时已合并' + (hadPauses > 0 ? '（新卡重新计算停卡次数）' : ''));
 }
 
+
+// ===================== 年卡停卡弹窗 =====================
+function pauseEnrollment(cls, name) {
+  const enroll = getEnrollment(cls, name);
+  if (!isAnnualCard(enroll)) { toast('只有 100 节 / 200 节的年卡可以停卡'); return; }
+  const open = pauseOpen(enroll);
+  const used = pauseUsedCount(enroll);
+  const total = pauseDaysTotal(enroll);
+  const today = fmtDate(new Date());
+  const items = pauseItems(enroll);
+
+  const rows = items.map((r, i) => {
+    const days = r.end ? `${parseInt(r.days) || 0} 天` : `${Math.max(0, pauseDateDiff(r.start, today))} 天（进行中）`;
+    const state = r.end ? '已完成' : '<span style="color:#ea580c;font-weight:700">停卡中</span>';
+    const note = r.note ? `<div style="font-size:12px;color:var(--text2)">${esc(r.note)}</div>` : '';
+    return `<tr>
+      <td style="padding:6px 8px">${i + 1}</td>
+      <td style="padding:6px 8px">${r.start || '-'}</td>
+      <td style="padding:6px 8px">${r.end || '—'}</td>
+      <td style="padding:6px 8px">${days}</td>
+      <td style="padding:6px 8px">${state}${note}</td>
+      <td style="padding:6px 8px;text-align:right"><button class="btn btn-sm btn-danger" onclick="deletePauseRecord('${esc(cls)}','${esc(name)}',${i})">删除</button></td>
+    </tr>`;
+  }).join('');
+
+  const usedColor = used >= ANNUAL_PAUSE_LIMIT ? '#dc2626' : 'var(--text)';
+  let actionHtml = '';
+  if (open) {
+    actionHtml = `
+      <div style="border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px">停卡中（开始于 ${open.start}）：填写复课日期后，到期日自动顺延</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+          <label style="font-size:13px;color:var(--text2)">复课日期 <input type="date" id="resume_date" value="${today}" style="display:block;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
+          <button class="btn btn-primary" onclick="confirmResume('${esc(cls)}','${esc(name)}')">确认复课并顺延</button>
+        </div>
+      </div>`;
+  } else if (used >= ANNUAL_PAUSE_LIMIT) {
+    actionHtml = `
+      <div style="border-top:1px solid var(--border);padding-top:12px;font-size:13px;color:#dc2626">
+        该年卡的 ${ANNUAL_PAUSE_LIMIT} 次停卡机会已用完（续费开新卡后重新计算）
+      </div>`;
+  } else {
+    actionHtml = `
+      <div style="border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px">开始停卡：停卡期间倒计时暂停，复课后到期日按停卡天数顺延</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+          <label style="font-size:13px;color:var(--text2)">停卡开始日期 <input type="date" id="pause_start" value="${today}" style="display:block;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
+          <label style="font-size:13px;color:var(--text2);flex:1;min-width:140px">备注（可选） <input type="text" id="pause_note" placeholder="例如：回国探亲" style="width:100%;display:block;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
+          <button class="btn btn-primary" onclick="confirmPause('${esc(cls)}','${esc(name)}')">确认停卡</button>
+        </div>
+      </div>`;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.maxWidth = '600px';
+  modal.innerHTML = `
+    <h3>🕒 年卡停卡管理</h3>
+    <div style="margin-bottom:12px;font-size:14px;color:var(--text2);line-height:1.7">
+      <b style="color:var(--text)">${esc(cls)} · ${esc(name)}</b><br>
+      总课时 ${enroll.totalHours || '-'} 节 · 有效期 ${enroll.validDays || '-'} 天<br>
+      已用 <b style="color:${usedColor}">${used} / ${ANNUAL_PAUSE_LIMIT}</b> 次 · 累计顺延 <b>${total}</b> 天 · 当前到期日 <b>${enroll.endDate || '-'}</b>
+    </div>
+    ${items.length
+      ? `<table class="data-table" style="font-size:13px;margin-bottom:14px"><thead><tr>
+           <th style="padding:6px 8px">#</th><th style="padding:6px 8px">停卡开始</th><th style="padding:6px 8px">复课日期</th><th style="padding:6px 8px">顺延</th><th style="padding:6px 8px">状态 / 备注</th><th></th>
+         </tr></thead><tbody>${rows}</tbody></table>`
+      : '<div style="margin-bottom:14px;font-size:13px;color:var(--text2)">还没有停卡记录</div>'}
+    ${actionHtml}
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">关闭</button>
+    </div>
+  `;
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+function confirmPause(cls, name) {
+  const enroll = getEnrollment(cls, name);
+  if (!isAnnualCard(enroll)) { toast('只有 100 节 / 200 节的年卡可以停卡'); return; }
+  if (pauseOpen(enroll)) { toast('该学员已经在停卡中'); return; }
+  if (pauseUsedCount(enroll) >= ANNUAL_PAUSE_LIMIT) { toast(`停卡机会已用完（每张卡 ${ANNUAL_PAUSE_LIMIT} 次）`); return; }
+  const left = daysUntil(enroll.endDate);
+  if (left !== null && left < 0) { toast('该学员课时已超期，请先「激活」或续期再停卡'); return; }
+  const startEl = document.getElementById('pause_start');
+  const noteEl = document.getElementById('pause_note');
+  const start = (startEl && startEl.value) || fmtDate(new Date());
+  const note = ((noteEl && noteEl.value) || '').trim();
+  const box = pauseBox(enroll);
+  // 首次停卡时记下原始到期日，复课后从这里往后顺延
+  if (!box.base) box.base = enroll.endDate || '';
+  box.items.push({ start: start, end: '', days: 0, note: note, at: new Date().toISOString() });
+  saveData();
+  _upsertEnrollmentRow(cls, name);
+  closeTopModal();
+  renderEnrollmentTable();
+  toast(`${name} 已停卡（第 ${pauseUsedCount(enroll)} 次），倒计时已暂停，复课时自动顺延`);
+}
+
+function confirmResume(cls, name) {
+  const enroll = getEnrollment(cls, name);
+  const open = pauseOpen(enroll);
+  if (!open) { toast('该学员不在停卡状态'); return; }
+  const el = document.getElementById('resume_date');
+  const resumeDate = (el && el.value) || fmtDate(new Date());
+  const days = Math.max(0, pauseDateDiff(open.start, resumeDate));
+  open.end = resumeDate;
+  open.days = days;
+  pauseApply(enroll);
+  saveData();
+  _upsertEnrollmentRow(cls, name);
+  closeTopModal();
+  renderEnrollmentTable();
+  toast(`${name} 已复课，到期日顺延 ${days} 天至 ${enroll.endDate}`);
+}
+
+function deletePauseRecord(cls, name, idx) {
+  const enroll = getEnrollment(cls, name);
+  const items = pauseItems(enroll);
+  const rec = items[idx];
+  if (!rec) return;
+  const label = rec.end
+    ? `停卡记录 ${rec.start} → ${rec.end}（顺延 ${parseInt(rec.days) || 0} 天）`
+    : `「停卡中」记录（开始于 ${rec.start}）`;
+  if (!confirm(`确定删除这条${label}吗？到期日会相应回退。`)) return;
+  items.splice(idx, 1);
+  pauseApply(enroll);
+  saveData();
+  _upsertEnrollmentRow(cls, name);
+  closeTopModal();
+  renderEnrollmentTable();
+  toast('停卡记录已删除，到期日已重新计算');
+}
 
 function enrollmentTableHtml(frozenOnly) {
   const months = ['6','7','8','9','10','11','12'];
@@ -2549,10 +2788,17 @@ function enrollmentTableHtml(frozenOnly) {
       const cons = calcConsumption(cls, st.name);
       const days = daysUntil(enroll.endDate);
       const remaining = (parseInt(enroll.totalHours) || 0) - cons.total;
+      const annual = isAnnualCard(enroll);
+      const paused = pauseOpen(enroll);
+      const usedPauses = pauseUsedCount(enroll);
+      const pausedDays = pauseDaysTotal(enroll);
 
       let daysClass = '';
       let daysText = '<span class="empty">-</span>';
-      if (days !== null) {
+      if (paused) {
+        daysClass = 'near-expire';
+        daysText = '<span style="color:#ea580c;font-weight:700">暂停中</span> <span class="empty" style="font-size:12px">剩余 ' + pauseDateDiff(paused.start, enroll.endDate) + ' 天</span>';
+      } else if (days !== null) {
         if (days < 0) { daysClass = 'expired'; daysText = `超期 ${Math.abs(days)} 天`; }
         else if (days <= 7) { daysClass = 'near-expire'; daysText = `${days} 天`; }
         else { daysText = `${days} 天`; }
@@ -2569,15 +2815,18 @@ function enrollmentTableHtml(frozenOnly) {
         <td class="num">${isDisciple ? '<span class="disciple-note">不限课时</span>' : (enroll.totalHours || '-')}</td>
         <td class="num">${enroll.validDays || '-'}</td>
         <td>${enroll.startDate || '<span class="empty">-</span>'}</td>
-        <td>${enroll.endDate || '<span class="empty">-</span>'}</td>
+        <td>${enroll.endDate || '<span class="empty">-</span>'}${pausedDays > 0 ? ` <span class="badge-pause" title="累计停卡顺延 ${pausedDays} 天">+${pausedDays}天</span>` : ''}</td>
         <td class="${daysClass}">${daysText}</td>
         <td class="num">${cons.total}</td>
 
         ${months.map(m => `<td class="num">${cons.monthly[m] || 0}</td>`).join('')}
         <td class="${remainingClass} num">${isDisciple ? '—' : remaining}</td>
-        <td>${frozen ? '<span style="color:#dc2626;font-weight:700">已冻结</span>' : '<span style="color:#16a34a">正常</span>'}</td>
+        <td>${paused ? `<span style="color:#ea580c;font-weight:700">停卡中</span><div class="empty" style="font-size:12px">第 ${usedPauses} 次</div>` : (frozen ? '<span style="color:#dc2626;font-weight:700">已冻结</span>' : '<span style="color:#16a34a">正常</span>')}</td>
         <td>
           ${frozen ? `<button class="btn btn-sm btn-primary" onclick="activateEnrollment('${esc(cls)}','${esc(st.name)}')">激活</button>` : ''}
+          ${annual && !frozen ? (paused
+            ? `<button class="btn btn-sm btn-primary" onclick="pauseEnrollment('${esc(cls)}','${esc(st.name)}')" title="停卡中：点此填写复课日期并顺延到期日">复课</button>`
+            : `<button class="btn btn-sm btn-outline" onclick="pauseEnrollment('${esc(cls)}','${esc(st.name)}')" title="年卡停卡：每张卡 ${ANNUAL_PAUSE_LIMIT} 次机会，已用 ${usedPauses} 次">停卡 ${usedPauses}/${ANNUAL_PAUSE_LIMIT}</button>`) : ''}
           <button class="btn btn-sm btn-outline" onclick="editEnrollment('${esc(cls)}','${esc(st.name)}')">编辑</button>
           <button class="btn btn-sm btn-danger" onclick="deleteEnrollmentRow('${esc(cls)}','${esc(st.name)}',this)" title="删除该学员及其报课、出勤记录"> 删除</button>
         </td>
@@ -2624,7 +2873,7 @@ function editEnrollment(cls, name) {
       <label style="font-size:13px;color:var(--text2)">总课时 <input type="number" id="enroll_total" value="${enroll.totalHours || ''}" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
       <label style="font-size:13px;color:var(--text2)">有效期天数 <input type="number" id="enroll_days" value="${enroll.validDays || ''}" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
       <label style="font-size:13px;color:var(--text2)">生效日期 <input type="date" id="enroll_start" value="${enroll.startDate || ''}" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
-      <label style="font-size:13px;color:var(--text2)">到期日期（自动计算） <input type="date" id="enroll_end" value="${enroll.endDate || ''}" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;background:#f8fafc"></label>
+      <label style="font-size:13px;color:var(--text2)">到期日期（自动计算${pauseDaysTotal(enroll) > 0 ? `，含停卡顺延 ${pauseDaysTotal(enroll)} 天` : ''}） <input type="date" id="enroll_end" value="${enroll.endDate || ''}" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;background:#f8fafc"></label>
       <label style="font-size:13px;color:var(--text2)">6月之前累计消课 <input type="number" id="enroll_before" value="${enroll.beforeJune || ''}" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"></label>
       <label style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px">
         <input type="checkbox" id="enroll_disciple" ${enroll.isDisciple ? 'checked' : ''} style="width:18px;height:18px">
@@ -2647,9 +2896,8 @@ function editEnrollment(cls, name) {
     const sv = startInput.value;
     const dv = parseInt(daysInput.value);
     if (sv && dv > 0) {
-      const start = new Date(sv);
-      start.setDate(start.getDate() + dv);
-      endInput.value = start.toISOString().split('T')[0];
+      // 原始到期日 = 生效日 + 有效期，再加上累计停卡天数
+      endInput.value = pauseDateAdd(pauseDateAdd(sv, dv), pauseDaysTotal(enroll));
     }
   }
   startInput.addEventListener('change', autoCalcEnd);
@@ -2658,27 +2906,41 @@ function editEnrollment(cls, name) {
 
 function saveEnrollment(cls, name, btn) {
   const key = enrollKey(cls, name);
-  db.enrollment[key] = {
-    totalHours: parseInt(document.getElementById('enroll_total').value) || 0,
-    validDays: parseInt(document.getElementById('enroll_days').value) || 0,
-    startDate: document.getElementById('enroll_start').value,
-    endDate: document.getElementById('enroll_end').value,
+  const prev = db.enrollment[key] || {};
+  const totalHours = parseInt(document.getElementById('enroll_total').value) || 0;
+  const validDays = parseInt(document.getElementById('enroll_days').value) || 0;
+  const startDate = document.getElementById('enroll_start').value;
+  const inputEnd = document.getElementById('enroll_end').value;
+  const next = {
+    totalHours: totalHours,
+    validDays: validDays,
+    startDate: startDate,
+    endDate: inputEnd,
     beforeJune: parseInt(document.getElementById('enroll_before').value) || 0,
     isDisciple: document.getElementById('enroll_disciple').checked,
+    suspensions: prev.suspensions, // 保留已有停卡记录
   };
+  const box = pauseBox(next);
+  // 输入框里显示的就是最终到期日；反推原始到期日 = 最终到期日 - 累计顺延天数，
+  // 这样既尊重用户手填的日期，又能保留停卡顺延。
+  const shift = pauseDaysTotal(next);
+  if (inputEnd) {
+    box.base = pauseDateAdd(inputEnd, -shift);
+  } else {
+    box.base = (startDate && validDays > 0) ? pauseDateAdd(startDate, validDays) : '';
+  }
+  pauseApply(next);
+  if (shift > 0 && box.base && pauseDateAdd(box.base, shift) !== inputEnd) {
+    console.warn('[Enrollment] 到期日与手填值不一致:', inputEnd, '->', next.endDate);
+  }
+  db.enrollment[key] = next;
   saveData();
-  (async () => {
-    if (!_supabase) return;
-    try {
-      const enr = db.enrollment[key];
-      const { error } = await _supabase.from('enrollment').upsert({ class_name:cls, student_name:name, total_hours:enr.totalHours||0, valid_days:enr.validDays||0, start_date:enr.startDate||null, end_date:enr.endDate||null, before_june:enr.beforeJune||0, is_disciple:enr.isDisciple||false }, { onConflict: 'class_name,student_name' });
-      if (error) { console.error(error); toast('报课同步失败：' + error.message); }
-    } catch(e) { console.error(e); }
-  })();
+  _upsertEnrollmentRow(cls, name);
   btn.closest('.modal-overlay').remove();
   renderEnrollmentTable();
-      renderWeeklySummaryTable();
-  toast(`已保存 ${name} 的报课信息`);
+  renderWeeklySummaryTable();
+  const extra = pauseDaysTotal(next) > 0 ? `（含停卡顺延 ${pauseDaysTotal(next)} 天）` : '';
+  toast(`已保存 ${name} 的报课信息${extra}`);
 }
 
 function deleteEnrollmentRow(cls, name, btn) {
@@ -2833,7 +3095,7 @@ async function revokeReportLink(cls, name, btn) {
 function exportEnrollment() {
   const months = ['6','7','8','9','10','11','12'];
   let csv = '\uFEFF菲律宾少林文化中心 - 学员报课信息统计\n';
-  csv += '班级,姓名,总课时,有效期天数,生效日期,到期日期,距离到期天数,总消课数,6月前累计,6月消课,7月消课,8月消课,9月消课,10月消课,11月消课,12月消课,当前剩余,状态\n';
+  csv += '班级,姓名,总课时,有效期天数,生效日期,到期日期,距离到期天数,总消课数,6月前累计,6月消课,7月消课,8月消课,9月消课,10月消课,11月消课,12月消课,当前剩余,停卡次数,累计顺延天数,状态\n';
 
   Object.keys(db.students).forEach(cls => {
     db.students[cls].forEach(st => {
@@ -2841,10 +3103,11 @@ function exportEnrollment() {
       const cons = calcConsumption(cls, st.name);
       const days = daysUntil(enroll.endDate);
       const isDisciple = enroll.isDisciple;
+      const paused = pauseOpen(enroll);
       const remaining = isDisciple ? '' : ((parseInt(enroll.totalHours) || 0) - cons.total);
       csv += `${cls},${st.name},${isDisciple ? '弟子班' : enroll.totalHours},${enroll.validDays},${enroll.startDate},${enroll.endDate},${days === null ? '' : days},${cons.total},${isDisciple ? '' : (enroll.beforeJune || 0)},`;
       csv += months.map(m => cons.monthly[m] || 0).join(',');
-      csv += `,${remaining},${isStudentFrozen(cls, st.name) ? '已冻结' : '正常'}\n`;
+      csv += `,${remaining},${pauseUsedCount(enroll)},${pauseDaysTotal(enroll)},${paused ? '停卡中' : (isStudentFrozen(cls, st.name) ? '已冻结' : '正常')}\n`;
     });
   });
 
